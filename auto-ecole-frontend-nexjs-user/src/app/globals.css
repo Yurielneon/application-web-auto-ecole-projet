@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f1f1f1;
+  --foreground: #110d1b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: hsl(257, 35%, 8%);
+    --foreground: #f1f1f1;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* debut page d'accueil */
+
+.main {
+  background-image: linear-gradient( rgba(0, 151, 88, 0.247),rgba(14, 71, 43, 0.349)),url(../../public/images/couverture.jpg);
+  background-size: cover;
+  background-attachment: fixed;
+}
+._formation:hover {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+}
+._formationP{
+  display: none;
+  animation: formationP 2s;
+}
+@keyframes formationP {
+  from{opacity: 0;} to {opacity: 1;}
+}
+._formation:hover > div._formationP{
+  display: block;
+}
+
+
+
+
+/* fin de page d'accueil */
+.etest {
+  background-color: #00be8e4b;
+}
