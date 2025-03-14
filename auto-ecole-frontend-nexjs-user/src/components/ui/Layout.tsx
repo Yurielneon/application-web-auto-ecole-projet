@@ -13,7 +13,7 @@ export default function EspaceMenu ({children}: {children: React.ReactNode}) {
     return(
         <main>
             <Header></Header>
-            <div className='w-full h-full md:mt-12 mt-4 md:p-4 text-sm' >
+            <div className='w-full h-full md:mt-12 md:pt-16 mt-4 md:p-4 text-sm' >
                 <div className='w-full h-full flex md:flex-row flex-col' >
                     <div className='w-1/4 md:block hidden h-full bg-background-200 dark:bg-foreground-200 px-4 py-6 rounded-2xl mr-4' >
                         <div className='w-full h-full justify-center items-center flex' >

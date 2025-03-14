@@ -25,8 +25,8 @@ export default {
           w: "#ffffff93"
         } ,
         theme: {
-          f: "#00e498",
-          t: "#00be8e4b"
+          f: "#9e4aff",
+          t: "#9e4aff7c"
         }
       },
       fontFamily: {

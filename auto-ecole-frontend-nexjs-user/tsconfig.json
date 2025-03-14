@@ -22,6 +22,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/espace/cours/page.tsx", "src/app/inscription/page.jsx"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/espace/cours/page.tsx", "src/app/inscription/[id]/page.jsx"],
   "exclude": ["node_modules"]
 }

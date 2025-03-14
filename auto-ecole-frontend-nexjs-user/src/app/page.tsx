@@ -3,32 +3,38 @@
 import { useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { FaCarSide, FaRoad, FaIdCard, FaCalendarAlt, FaRegClock, FaInstagram, FaFacebookF } from "react-icons/fa";
+import { FaCarSide, FaRoad, FaIdCard, FaCalendarAlt,FaClock, FaRegClock, FaInstagram, FaFacebookF } from "react-icons/fa";
 import { RiSteering2Fill } from "react-icons/ri";
 import Header from "../components/ui/Header";
+import Link from "next/link";
 
 export default function Home() {
+  
   const [formation] = useState([
     {
-      idFormation: 0,
-      image: "/images/permis-a.jpg",
-      dateFormation: "12 Mars 2025",
-      dureeFormation: "2 mois intensifs",
-      typePermis: "A",
-      dateExamenCode: "23 Nov 2025",
-      dateExamenConduite: "30 Déc 2025",
-      description: "Formation complète deux-roues avec instructeurs experts"
-    },
-    {
-      idFormation: 1,
-      image: "/images/permis-b.jpg",
-      dateFormation: "15 Avril 2025",
-      dureeFormation: "3 mois flex",
-      typePermis: "B",
-      dateExamenCode: "10 Jan 2026",
-      dateExamenConduite: "28 Fév 2026",
-      description: "Apprentissage progressif avec véhicules récents"
+      id: 1,
+      title: "Formation Permis B",
+      description: "Apprenez à conduire en toute sécurité avec notre formation complète.",
+      start_date: "2023-11-15",
+      duration_weeks: 12,
+      price: 1200.50,
+      category: { id: 1, name: "Permis B" },
+      schedule: "[\"9h-12h\", \"14h-17h\"]",
+      registration_end_date: "2023-11-10",
+      couverture: "/images/permiA.jpg"
+    },    {
+      id: 2,
+      title: "Formation Permis B",
+      description: "Apprenez à conduire en toute sécurité avec notre formation complète.",
+      start_date: "2023-11-15",
+      duration_weeks: 12,
+      price: 1200.50,
+      category: { id: 1, name: "Permis B" },
+      schedule: "[\"9h-12h\", \"14h-17h\"]",
+      registration_end_date: "2023-11-10",
+      couverture: "/images/permiB.jpg"
     }
+
   ]);
 
   const cardVariants = {
@@ -54,8 +60,7 @@ export default function Home() {
             className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-background-900/80 to-transparent" />
-        </div>
+        <div className="absolute inset-0 bg-gradient-to-r from-gray-900/80 to-transparent dark:from-background-900/60" />        </div>
         
         <motion.div 
           initial={{ opacity: 0, x: -50 }}
@@ -63,16 +68,16 @@ export default function Home() {
           transition={{ duration: 0.8 }}
           className="relative z-10 h-full flex items-center px-8"
         >
-          <div className="max-w-2xl space-y-6 text-background-100">
+          <div className="max-w-2xl space-y-6 text-background-800">
             <h1 className="text-5xl font-bold leading-tight">
               Devenez un conducteur <span className="text-theme-t">confiant</span> avec nos experts
             </h1>
             <div className="flex gap-4">
-              <button className="bg-theme-t text-background-100 px-8 py-3 rounded-full flex items-center gap-2 hover:bg-theme-t/90 transition-all">
+              <button className="bg-theme-t text-background-800 px-8 py-3 rounded-full flex items-center gap-2 hover:bg-theme-t/90 transition-all">
                 <RiSteering2Fill />
                 S`inscrire maintenant
               </button>
-              <button className="border-2 border-background-100 text-background-100 px-8 py-3 rounded-full hover:bg-background-100/10 transition-all">
+              <button className="border-2 border-background-800 text-background-800 px-8 py-3 rounded-full hover:bg-background-100/10 transition-all">
                 Découvrir
               </button>
             </div>
@@ -128,7 +133,7 @@ export default function Home() {
       </section>
 
       {/* Formation Timeline */}
-      <section className="py-16 bg-background-200 dark:bg-foreground-900">
+      <section className="py-16 bg-background-200 dark:bg-foreground-900" >
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">Notre Méthode en 4 Étapes</h2>
           
@@ -153,63 +158,87 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       {/* Nouveautés Section */}
       <section className="py-16 bg-background-100 dark:bg-foreground-800">
         <div className="container mx-auto px-4">
+        <div id="formations" ></div>
           <h2 className="text-3xl font-bold text-center mb-12">Nos Formations</h2>
           
-          <div className="grid md:grid-cols-2 gap-8">
-            {formation.map((forma) => (
-              <motion.div
-                key={forma.idFormation}
-                whileHover={{ scale: 1.02 }}
-                className="bg-background-200 dark:bg-foreground-700 rounded-2xl overflow-hidden shadow-xl"
-              >
-                <div className="relative h-64">
-                  <Image
-                    src={forma.image}
-                    alt={`Permis ${forma.typePermis}`}
-                    fill
-                    className="object-cover"
-                  />
+          <div className="grid md:grid-cols-2 gap-8 ">
+          {formation.map((forma) => (
+            <motion.div
+              key={forma.id}
+              whileHover={{ scale: 1.02 }}
+              className="bg-background-200 dark:bg-foreground-700 rounded-2xl overflow-hidden shadow-xl"
+            >
+              {/* Image de la formation (à remplacer par une image dynamique si disponible) */}
+              <div className="relative h-64">
+                <Image
+                  src={forma.couverture} // Remplacez par une image dynamique si disponible
+                  alt={`Formation ${forma.title}`}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+
+              <div className="p-6 text-background-800">
+                {/* Titre et catégorie */}
+                <div className="flex items-center gap-4 mb-4">
+                  <span className="bg-theme-t px-4 py-1 rounded-full">
+                    {forma.category?.name || "Non catégorisé"} {/* Affiche la catégorie */}
+                  </span>
+                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                    <FaRegClock />
+                    <span>{forma.duration_weeks} semaines</span> {/* Durée en semaines */}
+                  </div>
                 </div>
-                
-                <div className="p-6">
-                  <div className="flex items-center gap-4 mb-4">
-                    <span className="bg-theme-t text-background-100 px-4 py-1 rounded-full">
-                      Permis {forma.typePermis}
-                    </span>
-                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                      <FaRegClock />
-                      <span>{forma.dureeFormation}</span>
+
+                {/* Titre de la formation */}
+                <h3 className="text-xl font-bold mb-2">{forma.title}</h3>
+
+                {/* Description */}
+                <p className="text-gray-600 dark:text-gray-300 mb-4">
+                  {forma.description}
+                </p>
+
+                {/* Dates importantes */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <FaCalendarAlt className="text-theme-t" />
+                      <span>Début : {new Date(forma.start_date).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <FaCalendarAlt className="text-theme-t" />
+                      <span>Fin d`inscription : {forma.registration_end_date ? new Date(forma.registration_end_date).toLocaleDateString() : "Aucune date"}</span>
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <FaCalendarAlt className="text-theme-t" />
-                        <span>Code : {forma.dateExamenCode}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <FaCalendarAlt className="text-theme-t" />
-                        <span>Conduite : {forma.dateExamenConduite}</span>
-                      </div>
+                  {/* Horaires (si disponibles) */}
+                  {forma.schedule && (
+                    <div className="flex items-center gap-2">
+                      <FaClock className="text-theme-t" />
+                      <span>Horaires : {JSON.parse(forma.schedule).join(", ")}</span>
                     </div>
+                  )}
+                </div>
 
-                    <p className="text-gray-600 dark:text-gray-300">
-                      {forma.description}
-                    </p>
-
-                    <button className="w-full bg-theme-t text-background-100 py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-theme-t/90 transition-all">
+                {/* Prix et bouton de réservation */}
+                <div className="mt-6 flex items-center justify-between">
+                  <span className="text-2xl font-bold text-theme-t">
+                    {forma.price.toFixed(2)} Ar
+                  </span>
+                  <Link href={`/inscription/${forma.id}`}>
+                    <button className="bg-theme-t text-background-800 px-6 py-3 rounded-lg flex items-center gap-2 hover:bg-theme-t/90 transition-all">
                       <RiSteering2Fill />
-                      Réserver cette formation
+                      Réserver
                     </button>
-                  </div>
+                  </Link>
+
                 </div>
-              </motion.div>
-            ))}
+              </div>
+            </motion.div>
+          ))}
           </div>
         </div>
       </section>
