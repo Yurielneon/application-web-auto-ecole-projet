@@ -1,41 +1,17 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { FaCarSide, FaRoad, FaIdCard, FaCalendarAlt,FaClock, FaRegClock, FaInstagram, FaFacebookF } from "react-icons/fa";
 import { RiSteering2Fill } from "react-icons/ri";
 import Header from "../components/ui/Header";
 import Link from "next/link";
+import axios from "axios";
 
 export default function Home() {
   
-  const [formation] = useState([
-    {
-      id: 1,
-      title: "Formation Permis B",
-      description: "Apprenez à conduire en toute sécurité avec notre formation complète.",
-      start_date: "2023-11-15",
-      duration_weeks: 12,
-      price: 1200.50,
-      category: { id: 1, name: "Permis B" },
-      schedule: "[\"9h-12h\", \"14h-17h\"]",
-      registration_end_date: "2023-11-10",
-      couverture: "/images/permiA.jpg"
-    },    {
-      id: 2,
-      title: "Formation Permis B",
-      description: "Apprenez à conduire en toute sécurité avec notre formation complète.",
-      start_date: "2023-11-15",
-      duration_weeks: 12,
-      price: 1200.50,
-      category: { id: 1, name: "Permis B" },
-      schedule: "[\"9h-12h\", \"14h-17h\"]",
-      registration_end_date: "2023-11-10",
-      couverture: "/images/permiB.jpg"
-    }
-
-  ]);
+  const [formation, setFormation] = useState([]);
 
   const cardVariants = {
     offscreen: { y: 50, opacity: 0 },
@@ -45,6 +21,35 @@ export default function Home() {
       transition: { type: "spring", bounce: 0.4, duration: 0.8 }
     }
   };
+
+  useEffect(() => {
+
+    const getAllFormation = async () => {
+      try {
+        const res = await axios.get("http://localhost:8000/api/trainings",
+        { headers: { "Content-Type": "application/json" }});
+        console.log(" Donnees recus : " + res.data.data)
+        setFormation(res.data.data)
+      } catch (error) {console.error(error)}
+    }
+    getAllFormation();
+  }, [])
+
+  useEffect(() => {
+    console.log("Voici les formations :")
+    console.log(formation)
+  }, [formation])
+
+  // Fonction helper pour parser le schedule
+  const parseSchedule = (schedule) => {
+    try {
+      if (Array.isArray(schedule)) return schedule;
+      if (typeof schedule === 'string') return JSON.parse(schedule);
+      return [];
+    } catch {
+      return [];
+    }
+};
 
   return (
     <div className="dark:bg-foreground-900">
@@ -158,7 +163,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-      {/* Nouveautés Section */}
       <section className="py-16 bg-background-100 dark:bg-foreground-800">
         <div className="container mx-auto px-4">
         <div id="formations" ></div>
@@ -174,7 +178,7 @@ export default function Home() {
               {/* Image de la formation (à remplacer par une image dynamique si disponible) */}
               <div className="relative h-64">
                 <Image
-                  src={forma.couverture} // Remplacez par une image dynamique si disponible
+                  src={"/images/permiA.jpg"} // Remplacez par une image dynamique si disponible
                   alt={`Formation ${forma.title}`}
                   fill
                   className="object-cover"
@@ -218,7 +222,22 @@ export default function Home() {
                   {forma.schedule && (
                     <div className="flex items-center gap-2">
                       <FaClock className="text-theme-t" />
-                      <span>Horaires : {JSON.parse(forma.schedule).join(", ")}</span>
+                      <span>Horaires : {
+                        (() => {
+                          try {
+                            const hours = typeof forma.schedule === 'string' 
+                              ? JSON.parse(forma.schedule)
+                              : forma.schedule;
+                            
+                            return Array.isArray(hours) 
+                              ? hours.join(", ")
+                              : "Format invalide";
+                          } catch (e) {
+                            console.error("Erreur de parsing du schedule:", e);
+                            return "Non disponible";
+                          }
+                        })()
+                      }</span>
                     </div>
                   )}
                 </div>
@@ -226,7 +245,7 @@ export default function Home() {
                 {/* Prix et bouton de réservation */}
                 <div className="mt-6 flex items-center justify-between">
                   <span className="text-2xl font-bold text-theme-t">
-                    {forma.price.toFixed(2)} Ar
+                    {forma.price} Ar
                   </span>
                   <Link href={`/inscription/${forma.id}`}>
                     <button className="bg-theme-t text-background-800 px-6 py-3 rounded-lg flex items-center gap-2 hover:bg-theme-t/90 transition-all">

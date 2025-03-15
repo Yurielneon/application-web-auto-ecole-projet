@@ -40,6 +40,11 @@ export default function EspaceMenu ({children}: {children: React.ReactNode}) {
                                     <div className='text-foreground-100 dark:text-background-100 bg-background-100 dark:bg-foreground-100 hover:bg-theme-t hover:text-white font-semibold px-4 py-3 my-1' >
                                         Contacter l`administration
                                     </div>
+                                </Link>                                
+                                <Link href={"/espace/information"} className={usePath === "espace/information"? "bg-green-500 text-black ":""} >
+                                    <div className='text-foreground-100 dark:text-background-100 bg-background-100 dark:bg-foreground-100 hover:bg-theme-t hover:text-white font-semibold px-4 py-3 my-1' >
+                                        Mes informations
+                                    </div>
                                 </Link>
                             </div>
                         </div>

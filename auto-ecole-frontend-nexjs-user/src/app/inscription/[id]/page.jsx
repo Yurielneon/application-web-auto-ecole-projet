@@ -7,10 +7,11 @@ import Header from "@/components/ui/Header"
 import FormSection from '@/components/ui/FormSection'
 import FileUpload from '@/components/ui/FileUpload'
 import DatePicker from '@/components/ui/DatePicker'
+import axios from 'axios'
 
 
 export default function Inscription({params}) {
-  const {id} = use(params);
+  const {training_id} = use(params);
   const { register, handleSubmit, control, formState: { errors } } = useForm()
   const [filePreviews, setFilePreviews] = useState({})
 
@@ -27,14 +28,35 @@ export default function Inscription({params}) {
 
   const onSubmit = async (data) => {
     const formData = new FormData()
+
     for (const key in data) {
+      if (key === "birth_date" && data[key] instanceof Date) {
+        // Convertir en format "YYYY-MM-DD"
+        formData.append(key, data[key].toISOString().split("T")[0]);
+
+      } else 
       if (data[key] instanceof FileList) {
-        formData.append(key, data[key][0])
+        formData.append(key, data[key][0]);
       } else {
-        formData.append(key, data[key])
+        formData.append(key, data[key]);
       }
     }
-    // Soumission vers l'API à implémenter
+
+    alert(formData.get("birth_date"))
+    // console.log(formData.get("birth_date"))
+
+    try {
+      const response = await axios.post("http://localhost:8000/api/students", formData,
+        { headers: { 'Content-Type': "multipart/form-data" }}
+      )
+
+      console.log(response.data)
+      alert("Inscription avec succès")
+
+    } catch (error) {
+      console.error(error)
+    } 
+
   }
 
 

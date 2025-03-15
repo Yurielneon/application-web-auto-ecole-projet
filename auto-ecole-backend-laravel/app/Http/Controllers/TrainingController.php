@@ -64,7 +64,6 @@ class TrainingController extends Controller
         return response()->json($training, 200);
     }
 
-   
 
     /**
      * Supprimer une formation.
