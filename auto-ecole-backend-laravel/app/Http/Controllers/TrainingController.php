@@ -29,6 +29,19 @@ class TrainingController extends Controller
         }
 
         $training = Training::create($data);
+        // Créer automatiquement deux examens prédéfinis
+        $training->exams()->createMany([
+            [
+                'name' => 'Code',
+                'type' => 'Théorique',
+                'date' => null, // Date à définir plus tard par l'admin
+            ],
+            [
+                'name' => 'Conduite',
+                'type' => 'Pratique',
+                'date' => null,
+            ],
+        ]);
         $training->load('category'); // Charger la relation category
 
         return response()->json(['message' => 'Formation créée avec succès.', 'training' => $training], 201);
@@ -64,7 +77,7 @@ class TrainingController extends Controller
         return response()->json($training, 200);
     }
 
-   
+
 
     /**
      * Supprimer une formation.
@@ -95,5 +108,22 @@ class TrainingController extends Controller
             ->with('category')
             ->get();
         return response()->json(['trainings' => $trainings], 200);
+    }
+
+    /** obtenir tous les cours relatif a la formation
+     */
+    public function getTrainingCourses($id)
+    {
+        $training = Training::with('courses')->findOrFail($id);
+        return response()->json(
+            $training->courses->map(function ($course) {
+                return [
+                    'id' => $course->id,
+                    'name' => $course->name,
+                    'type' => $course->type,
+                    'file_path' => $course->file_path,
+                ];
+            })
+        );
     }
 }

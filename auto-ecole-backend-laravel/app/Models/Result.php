@@ -10,15 +10,15 @@ class Result extends Model
 {
     use HasFactory;
 
-   
+
     protected $table = 'results';
 
-   
+
     protected $fillable = [
         'exam_id',
         'student_id',
         'score',
-        'status'
+        'passed'
     ];
 
 
@@ -31,7 +31,7 @@ class Result extends Model
             'exam_id' => 'required|exists:exams,id',
             'student_id' => 'required|exists:students,id',
             'score' => 'required|numeric|min:0|max:100',
-            'status' => 'required|in:passed,failed',
+
         ], [
             'exam_id.required' => 'Le champ examen est obligatoire.',
             'exam_id.exists' => 'L\'examen spécifié n\'existe pas.',
@@ -41,20 +41,19 @@ class Result extends Model
             'score.numeric' => 'Le score doit être un nombre.',
             'score.min' => 'Le score ne peut pas être inférieur à 0.',
             'score.max' => 'Le score ne peut pas être supérieur à 100.',
-            'status.required' => 'Le champ statut est obligatoire.',
-            'status.in' => 'Le statut doit être l\'un des suivants : passed, failed.',
+            'status.required' => 'Le champ statut est obligatoire.'
         ]);
 
         return $validator;
     }
 
-    
+
     public function exam()
     {
         return $this->belongsTo(Exam::class);
     }
 
-    
+
     public function student()
     {
         return $this->belongsTo(Student::class);

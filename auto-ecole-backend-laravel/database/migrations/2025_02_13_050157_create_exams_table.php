@@ -15,9 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('training_id')->constrained('trainings')->onDelete('cascade');
             $table->string('name', 100);
+            $table->string('type', 50);
             $table->date('date');
-            $table->time('time');
-            $table->enum('status', ['scheduled', 'completed'])->default('scheduled'); // 📌 Ajout d'une valeur par défaut
             $table->timestamps();
         });
 

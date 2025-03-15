@@ -189,7 +189,7 @@ class StudentController extends Controller
     {
         try {
             $students = Student::where('status', 'pending')
-                ->with('training:id,title')                
+                ->with('training:id,title')
                 ->get();
             return response()->json($students, 200);
         } catch (\Exception $e) {
@@ -237,6 +237,23 @@ class StudentController extends Controller
         }
     }
 
+
+    public function getStudentsInFormation(Request $request, $id){
+        try {
+          $students = Student::where('training_id', $id)
+          ->get();
+            return response()->json($students, 200);
+        } catch (\Exception $e) {
+         return response()->json(['error' => 'Erreur lors de la récupération des étudiants de la formation : ' . $e->getMessage()], 500)
+        }
+
+    }
+
+
+
+
+/** Notification API */
+
     public function getNotifications()
     {
         $notifications = Notification::latest()->get();
@@ -262,4 +279,6 @@ class StudentController extends Controller
         Notification::truncate();
         return response()->json(['message' => 'All notifications deleted'], 200);
     }
+
+
 }

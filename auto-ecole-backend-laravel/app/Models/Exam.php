@@ -10,16 +10,15 @@ class Exam extends Model
 {
     use HasFactory;
 
-    
+
     protected $table = 'exams';
 
-    
+
     protected $fillable = [
         'training_id',
         'name',
-        'date',
-        'time',
-        'status'
+        'type',
+        'date'
     ];
 
 
@@ -31,9 +30,7 @@ class Exam extends Model
         $validator = Validator::make($data, [
             'training_id' => 'required|exists:trainings,id',
             'name' => 'required|string|max:100',
-            'date' => 'required|date|after:today',
-            'time' => 'required|date_format:H:i',
-            'status' => 'required|in:pending,completed,canceled',
+            'date' => 'required|date|after:today'
         ], [
             'training_id.required' => 'Le champ formation est obligatoire.',
             'training_id.exists' => 'La formation spécifiée n\'existe pas.',
@@ -42,23 +39,19 @@ class Exam extends Model
             'name.max' => 'Le nom de l\'examen ne doit pas dépasser 100 caractères.',
             'date.required' => 'Le champ date est obligatoire.',
             'date.date' => 'La date doit être valide.',
-            'date.after' => 'La date doit être après aujourd\'hui.',
-            'time.required' => 'Le champ heure est obligatoire.',
-            'time.date_format' => 'Le format de l\'heure doit être HH:MM.',
-            'status.required' => 'Le champ statut est obligatoire.',
-            'status.in' => 'Le statut doit être l\'un des suivants : pending, completed, canceled.',
+            'date.after' => 'La date doit être après aujourd\'hui.'
         ]);
 
         return $validator;
     }
 
-    
+
     public function training()
     {
         return $this->belongsTo(Training::class);
     }
 
-    
+
     public function results()
     {
         return $this->hasMany(Result::class);

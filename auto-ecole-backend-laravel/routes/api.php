@@ -35,7 +35,7 @@ Route::middleware('auth:api')->post('/auth/verify', function () {
 
 
 Route::prefix('trainings')->group(function () {
-    Route::get('/', [TrainingController::class, 'index']);           // Avec pagination
+    Route::get('/', [af::class, 'index']);           // Avec pagination
     Route::get('/active', [TrainingController::class, 'getActiveTrainings']); // Sans pagination
     Route::post('/', [TrainingController::class, 'store']);
     Route::get('/{id}', [TrainingController::class, 'show']);
@@ -66,6 +66,7 @@ Route::get('/validated-students', [StudentController::class, 'getAllStudents']);
 
 Route::post('/students/{id}/approve', [StudentController::class, 'approveStudent']);
 Route::post('/students/{id}/reject', [StudentController::class, 'rejectStudent']);
+Route::post('/students/trainings/{id}', [StudentController::class, 'getStudentsInFormation']);
 
 
 
