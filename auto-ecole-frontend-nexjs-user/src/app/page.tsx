@@ -7,7 +7,8 @@ import { FaCarSide, FaRoad, FaIdCard, FaCalendarAlt,FaClock, FaRegClock, FaInsta
 import { RiSteering2Fill } from "react-icons/ri";
 import Header from "../components/ui/Header";
 import Link from "next/link";
-import axios from "axios";
+// Dans pages/login.jsx ou autres composants
+import api from '@/lib/api'; 
 
 export default function Home() {
   
@@ -26,8 +27,7 @@ export default function Home() {
 
     const getAllFormation = async () => {
       try {
-        const res = await axios.get("http://localhost:8000/api/trainings",
-        { headers: { "Content-Type": "application/json" }});
+        const res = await api.get("api/trainings");
         console.log(" Donnees recus : " + res.data.data)
         setFormation(res.data.data)
       } catch (error) {console.error(error)}

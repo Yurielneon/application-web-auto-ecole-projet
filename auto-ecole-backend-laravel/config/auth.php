@@ -11,6 +11,10 @@ return [
             'driver' => 'jwt',      // Utilise JWT pour l’authentification
             'provider' => 'administrators', // Fournisseur d’utilisateurs
         ],
+        'student' => [
+        'driver' => 'sanctum', // Ou 'jwt' si vous utilisez JWT
+        'provider' => 'students',
+    ],
     ],
 
     'providers' => [
@@ -18,6 +22,10 @@ return [
             'driver' => 'eloquent', // Utilise Eloquent comme pilote
             'model' => App\Models\Administrator::class, // Modèle associé
         ],
+        'students' => [
+        'driver' => 'eloquent',
+        'model' => App\Models\Student::class,
+    ],
     ],
 
     // 'passwords' => [
@@ -100,6 +108,7 @@ return [
 //     //     //     'table' => 'users',
 //     //     // ],
 //     // ],
+
 
 //     /*
 //     |--------------------------------------------------------------------------
