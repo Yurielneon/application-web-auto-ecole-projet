@@ -23,8 +23,8 @@ return [
             'model' => App\Models\Administrator::class, // Modèle associé
         ],
         'students' => [
-        'driver' => 'eloquent',
-        'model' => App\Models\Student::class,
+            'driver' => 'eloquent',
+            'model' => App\Models\Student::class,
     ],
     ],
 

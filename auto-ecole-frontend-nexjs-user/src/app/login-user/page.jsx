@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import axios from 'axios';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -12,22 +13,35 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Étape 1 : Récupération du cookie CSRF
+      // Étape 1 : Récupération du cookie CSRF (nécessaire pour les sessions)
       await axios.get('http://localhost:8000/sanctum/csrf-cookie');
       
       // Étape 2 : Tentative de connexion
       const response = await axios.post(
         'http://localhost:8000/api/login',
         { email, password },
-        { withCredentials: true }
+        { 
+          withCredentials: true,
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        }
       );
-  
-      // Étape 3 : Vérification de la réponse
-      if (response.data) {
-        router.push('/espace/cours');
-      }
-    } catch (err) {
-      setError('Identifiants incorrects ou compte en attente de validation');
+    
+      // Étape 3 : Stockage du token Sanctum
+      localStorage.setItem('auth_token', response.data.access_token);
+      
+      // Étape 4 : Redirection
+      router.push('/espace/cours');
+      
+    }catch (err) {
+      // Récupération du message d'erreur de l'API ou message générique
+      const errorMessage = err.response?.data?.error || "Erreur de connexion";
+      setError(errorMessage);
+    
+      // Log pour débogage
+      console.error("Erreur lors de la connexion :", err);
     }
   };
 

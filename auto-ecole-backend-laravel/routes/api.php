@@ -9,6 +9,7 @@ use App\Http\Controllers\StudentController;
 use App\Http\Controllers\TrainingController;
 use Illuminate\Support\Facades\Route;
 use App\Models\Student; // <-- Ajoutez cette ligne (Steve)
+use Illuminate\Support\Facades\Hash;
 
 
 Route::prefix('auth')->group(function () {
@@ -25,7 +26,7 @@ Route::prefix('courses')->group(function () {
     Route::get('/', [CourseController::class, 'index']);          // GET /api/courses
     Route::get('/{id}', [CourseController::class, 'show']);       // GET /api/courses/{id}
     Route::post('/', [CourseController::class, 'store']);         // POST /api/courses
-    Route::put('/{id}', [CourseController::class, 'update'])     // POST /api/courses/{id} (avec _method=PUT)
+    Route::put('/{id}', [CourseController::class, 'update'])      // POST /api/courses/{id} (avec _method=PUT)
         ->where('id', '[0-9]+');
     Route::delete('/{id}', [CourseController::class, 'destroy']); // DELETE /api/courses/{id}
 });
@@ -71,25 +72,54 @@ Route::get('/validated-students', [StudentController::class, 'getAllStudents']);
 Route::post('/students/{id}/approve', [StudentController::class, 'approveStudent']);
 Route::post('/students/{id}/reject', [StudentController::class, 'rejectStudent']);
 
-Route::post('/login', function (Request $request) { # Steve added this route
-    $credentials = $request->only('email', 'password');
-    
-    // Vérification explicite avec statut
-    $student = Student::where('email', $credentials['email'])
-                      ->where('status', 'validated')
-                      ->first();
+// Route::post('/login', function (Request $request) {
+//     $credentials = $request->only('email', 'password');
 
-    if ($student && Hash::check($credentials['password'], $student->password)) {
-        Auth::guard('student')->login($student);
-        $request->session()->regenerate();
-        return response()->json($student);
+//     // 1. Recherche du student par email (sans vérifier le statut)
+//     $student = Student::where('email', $credentials['email'])->first();
+
+//     // 2. Vérification de l'existence du compte
+//     if (!$student) {
+//         return response()->json(['error' => 'Email non trouvé']);
+//     }
+
+//     // 3. Vérification du statut "validated"
+//     if ($student->status !== 'validated') {
+//         return response()->json(['error' => 'Compte en attente de validation']);
+//     }
+
+//     // 4. Vérification du mot de passe
+//     if (!Hash::check($credentials['password'], $student->password)) {
+//         return response()->json(['error' => 'Mot de passe incorrect']);
+//     }
+
+//     // 5. Connexion réussie
+//     Auth::guard('student')->login($student);
+//     $request->session()->regenerate();
+//     return response()->json($student);
+// });
+
+Route::post('/login', function (Request $request) {
+    $request->validate([
+        'email' => 'required|email',
+        'password' => 'required'
+    ]);
+
+    // Recherche manuelle de l'utilisateur
+    $student = Student::where('email', $request->email)->first();
+
+    if (!$student || !Hash::check($request->password, $student->password)) {
+        return response()->json(['error' => 'Identifiants invalides'], 401);
     }
 
-    return response()->json(['error' => 'Compte non valide ou non validé'], 401);
-});
+    // Création du token Sanctum
+    $token = $student->createToken('auth_token')->plainTextToken;
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) { # Steve added this route
-    return $request->user();
+    return response()->json([
+        'access_token' => $token,
+        'token_type' => 'Bearer',
+        'student' => $student
+    ]);
 });
 
 // Route::post('/logout', function (Request $request) { # Steve added this route
@@ -98,10 +128,23 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) { # 
 //     return response()->json(['message' => 'Déconnecté']);
 // });
 
+// Route protégée pour récupérer l'étudiant connecté
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return response()->json([
+        'user' => $request->user()->load('training') // Chargez les relations si nécessaire
+    ]);
+});
+
+Route::middleware('auth:sanctum')->get('/student-connected', function (Request $request) {
+    return response()->json([
+        'student' => $request->user()->only('id', 'first_name', 'last_name', 'email', 'profile_picture'),
+        'profile_picture_url' => $request->user()->profile_picture_url // Ajoutez un accessor dans le modèle
+    ]);
+});
+
 Route::post('/logout', function (Request $request) {
     $request->user()->currentAccessToken()->delete();
-    
-    return response()->json(['message' => 'Déconnecté avec succès']);
+    return response()->json(['message' => 'Déconnexion réussie']);
 })->middleware('auth:sanctum');
 
 Route::post('/register', function (Request $request) {
@@ -119,17 +162,17 @@ Route::post('/register', function (Request $request) {
     if (!$student) {
         return response()->json([
             'error' => 'Aucun compte étudiant trouvé avec cet email'
-        ], 404);
+        ]);
     }
 
     if ($student->status !== 'validated') {
         return response()->json([
             'error' => 'Votre compte n\'est pas encore validé par l\'administration'
-        ], 403);
+        ]);
     }
 
     try {
-        $student->password = Hash::make($request->password);
+        $student->password = $request->password;
         $student->save();
 
         // Création du token Sanctum

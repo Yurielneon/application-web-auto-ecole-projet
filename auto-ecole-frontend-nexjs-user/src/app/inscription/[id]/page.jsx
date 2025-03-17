@@ -8,9 +8,11 @@ import FileUpload from '@/components/ui/FileUpload'
 import DatePicker from '@/components/ui/DatePicker'
 import axios from 'axios'
 import { useForm } from 'react-hook-form';
+import { use } from 'react'
+import route from 'next/router'
 
 export default function Inscription({ params }) {
-  const { training_id } = params;
+  const { id } = use(params);
   // const { register, handleSubmit, control, formState: { errors } } = useForm()
   const [filePreviews, setFilePreviews] = useState({})
   // Modifier la déclaration useForm
@@ -67,8 +69,9 @@ export default function Inscription({ params }) {
       } else if (value !== undefined && value !== null) {
         formData.append(key, value)
       }
-      // formData.append('training_id', training_id)
+
     })
+    formData.append('training_id', id)
 
     // Vérification des données
     for (const [key, value] of formData.entries()) {
@@ -83,7 +86,8 @@ export default function Inscription({ params }) {
         formData,
         { headers: { "Content-Type": "multipart/form-data" }}
       )
-      alert("Inscription réussie !")
+      alert("Inscription réussie !  Votre inscription sera activée après vérification par notre équipe. Comptez 24 à 48 heures pour recevoir votre confirmation par email")
+      route("/steve")
       console.log(response.data)
     } catch (error) {
       let errorMessage = "Erreur lors de l'inscription\n\n"

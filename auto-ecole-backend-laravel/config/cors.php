@@ -8,5 +8,5 @@ return [
     'allowed_headers' => ['*'],
     'exposed_headers' => [],
     'max_age' => 0,
-    'supports_credentials' => true // Retirer la virgule finale et le commentaire
+    'supports_credentials' => true
 ];

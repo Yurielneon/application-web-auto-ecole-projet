@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+
 class Student extends Authenticatable
 {
     use HasFactory, SoftDeletes, HasApiTokens;
@@ -122,5 +123,33 @@ class Student extends Authenticatable
     public function setPhoneAttribute($value)
     {
         $this->attributes['phone'] = str_replace(' ', '', $value);
+    }
+    /**
+     * Retourne l'identifiant unique de l'utilisateur pour le JWT.
+     *
+     * @return mixed
+     */
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    /**
+     * Retourne un tableau de revendications personnalisées pour le JWT.
+     *
+     * @return array
+     */
+    public function getJWTCustomClaims()
+    {
+        return [];
+    }
+
+    public function getProfilePictureUrlAttribute() // Pour récupérer l'URL de l'image de profil (Steve)
+    {
+        if (!$this->profile_picture) {
+            return asset('storage/default-avatar.png');
+        }
+        
+        return asset('storage/'.$this->profile_picture);
     }
 }

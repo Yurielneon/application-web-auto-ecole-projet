@@ -1,23 +1,23 @@
 "use client";
 
-import React, { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from "./Header";
-import { useEffect } from 'react';
-import api from '@/lib/api';
+import useAuth from '@/hooks/useAuth';
 
 export default function EspaceMenu ({children}: {children: React.ReactNode}) {
     
     const usePath = usePathname();
-    const [student, setStudent] = useState();
-    useEffect(() => {
-        api.get('/api/user')
-        .then(res => setStudent(res.data))
-        .catch(() => alert("C'est un espace pour les etudiants de l'auto-ecole, si vous voulez vous inscrire, veuillez switcher sur l'inscription"));
-        console.log(student);
-    }, []);
+    const { isAuthenticated, loading } = useAuth();
+
+    if (loading) {
+        return <div>Loading...</div>
+    }
+
+    if(!isAuthenticated) {
+        return null;
+    }
 
     return(
             <main>
@@ -50,9 +50,9 @@ export default function EspaceMenu ({children}: {children: React.ReactNode}) {
                                             Contacter l`administration
                                         </div>
                                     </Link>                                
-                                    <Link href={"/espace/information"} className={usePath === "espace/information"? "bg-green-500 text-black ":""} >
+                                    <Link href={"/espace/information/1"} className={usePath === "espace/information/"? "bg-green-500 text-black ":""} >
                                         <div className='text-foreground-100 dark:text-background-100 bg-background-100 dark:bg-foreground-100 hover:bg-theme-t hover:text-white font-semibold px-4 py-3 my-1' >
-                                            Mes informations
+                                            Attestations et informations
                                         </div>
                                     </Link>
                                 </div>

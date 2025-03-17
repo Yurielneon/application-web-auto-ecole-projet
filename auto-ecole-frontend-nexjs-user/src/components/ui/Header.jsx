@@ -3,13 +3,20 @@
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import axios from 'axios';
+import Image from 'next/image';
+import defaultAvatar from "../../../public/images/default-avatar.jpg";
+
 
 const Header = () => {
+  const router = useRouter();
   const pathname = usePathname();
   const [darkMode, setDarkMode] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [particlePositions, setParticlePositions] = useState([]);
+  const [student, setStudent] = useState(null);
+  const [loading, setLoading] = useState(true);
   const isInscriptionPage = pathname.startsWith("/inscription");
 
 
@@ -37,10 +44,44 @@ const Header = () => {
     }
   };
 
+  // Ajout: Récupération des données de l'étudiant
   useEffect(() => {
+    const fetchStudent = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        if (!token) return;
 
-  }
-  ,[])
+        const response = await axios.get('http://localhost:8000/api/student-connected', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+        setStudent(response.data.student);
+      } catch (error) {
+        console.error('Erreur de chargement du profil:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudent();
+  }, []);
+
+  // Ajout: Gestion de la déconnexion
+  const handleLogout = async () => {
+    try {
+      await axios.post('http://localhost:8000/api/logout', {}, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        }
+      });
+      localStorage.removeItem('auth_token');
+      router.push('/');
+    } catch (error) {
+      console.error('Erreur de déconnexion:', error);
+    }
+  };
 
   return (
     <motion.header
@@ -97,6 +138,7 @@ const Header = () => {
                 />
               </svg>
             </motion.div>
+            
             <motion.span 
               className="text-xl font-black bg-clip-text text-transparent"
               style={{
@@ -154,6 +196,76 @@ const Header = () => {
               </Link>
             ))}
           </div>
+          {student ? (
+              <motion.div 
+                className="flex items-center space-x-3 group"
+                whileHover={{ scale: 1.05 }}
+              >
+                <div className="relative">
+                <Image
+                    src={student.profile_picture_url || defaultAvatar}
+                    alt="Profile" 
+                    width={40}
+                    height={40}
+                    className="rounded-full border-2 object-cover"
+                    style={{
+                      borderColor: theme[darkMode ? 'dark' : 'light'].accent
+                    }}
+                    onError={(e) => {
+                      // Solution de secours en cas d'échec
+                      e.target.src = defaultAvatar.src;
+                    }}
+                    unoptimized // Optionnel pour les images externes
+                  />
+                  <div className="absolute -bottom-1 -right-1 bg-white dark:bg-gray-800 rounded-full p-1 shadow">
+                    <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                    </svg>
+                  </div>
+                </div>
+                
+                <motion.div 
+                  className="hidden lg:block"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                >
+                  <p className="text-sm font-semibold" style={{ color: theme[darkMode ? 'dark' : 'light'].primary }}>
+                    {student.first_name}
+                  </p>
+                  <p className="text-xs opacity-75" style={{ color: theme[darkMode ? 'dark' : 'light'].secondary }}>
+                    {student.email}
+                  </p>
+                </motion.div>
+
+                <motion.button
+                  onClick={handleLogout}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="p-2 rounded-full bg-red-500/20 backdrop-blur-lg border border-red-400/20 hover:border-red-400/40"
+                >
+                  <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                </motion.button>
+              </motion.div>
+            ) : (
+              !loading && (
+                <div className="flex items-center space-x-4">
+                  <Link
+                    href="/login-user"
+                    className="px-4 py-2 rounded-full backdrop-blur-lg border hover:border-white/30 transition-all"
+                    style={{
+                      background: `radial-gradient(circle, ${theme[darkMode ? 'dark' : 'light'].primary}20, transparent)`,
+                      borderColor: theme[darkMode ? 'dark' : 'light'].primary + '40'
+                    }}
+                  >
+                    <span className="text-sm font-semibold" style={{ color: theme[darkMode ? 'dark' : 'light'].primary }}>
+                      Connexion
+                    </span>
+                  </Link>
+                </div>
+              )
+            )}
 
           {/* Contrôles améliorés */}
           <div className="flex items-center space-x-4">

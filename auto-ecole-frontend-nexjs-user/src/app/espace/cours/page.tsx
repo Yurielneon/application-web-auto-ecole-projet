@@ -46,11 +46,10 @@ export default function Cours() {
         if(duration.minute === 15) {setDuration({...duration, pourcentage: 50})} 
         if(duration.minute === 20) {setDuration({...duration, pourcentage: 66})} 
         if(duration.minute === 25) {setDuration({...duration, pourcentage: 83})} 
-        if(duration.minute > 30) {setDuration({...duration, pourcentage: 100})} 
-
-
-
-        console.log(duration)
+        if(duration.minute > 30) {
+            setDuration({...duration, pourcentage: 100})
+            alert("C'est bon, vous avez presque fini de lire le document PDF")
+        } 
     }, [duration.second])
 
     return (
