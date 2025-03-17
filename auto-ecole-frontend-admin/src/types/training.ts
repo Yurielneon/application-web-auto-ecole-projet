@@ -11,4 +11,5 @@ export interface Training {
     registration_end_date: string;
     created_at?: string;
     updated_at?: string;
+    covering?:string;
 }

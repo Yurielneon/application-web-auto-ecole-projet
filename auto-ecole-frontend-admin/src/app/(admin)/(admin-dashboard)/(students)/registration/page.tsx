@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import { useStudent } from "@/contexts/StudentContext";
-import { Column } from "react-table";
+import { ColumnDef } from "@tanstack/react-table"; // Changement ici
 import { FaEye, FaCheck, FaTimes } from "react-icons/fa";
-import DataTable from "@/components/tables/datatable";
+import DataTable from "@/components/tables/datatable"; // Votre nouveau DataTable
 import { Modal } from "@/components/ui/modal";
 import Image from "next/image";
 import Toast from "@/components/custom-ui/Toast";
+import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -23,19 +24,33 @@ const PendingStudents: React.FC = () => {
         fetchPendingStudents();
     }, [fetchPendingStudents]);
 
-    const columns: Column<any>[] = [
-        { Header: "ID", accessor: "id" },
-        { Header: "Nom", accessor: "last_name" },
-        { Header: "Prénom", accessor: "first_name" },
-        { Header: "Email", accessor: "email" },
-        { Header: "Formation ID", accessor: "training.id" },
-        { Header: "Formation", accessor: "training.title" },
+    // Colonnes adaptées pour TanStack Table v8
+    const columns: ColumnDef<any>[] = [
+        { header: "ID", id: "id", cell: ({ row }) => row.original.id },
+        { header: "Nom", id: "last_name", cell: ({ row }) => row.original.last_name },
+        { header: "Prénom", id: "first_name", cell: ({ row }) => row.original.first_name || "" },
+        { header: "Email", id: "email", cell: ({ row }) => row.original.email || "" },
+        { header: "Formation ID", id: "training.id", cell: ({ row }) => row.original.training?.id || "" },
+        { header: "Formation", id: "training.title", cell: ({ row }) => row.original.training?.title || "" },
     ];
 
+    // Actions compatibles avec le nouveau DataTable
     const actions = [
-        { icon: <FaEye />, onClick: (row: any) => handleView(row), tooltip: "Voir", className: "text-blue-500 hover:text-blue-700" },
-        { icon: <FaCheck />, onClick: (row: any) => handleApprove(row), tooltip: "Valider", className: "text-green-500 hover:text-green-700" },
-        { icon: <FaTimes />, onClick: (row: any) => handleReject(row), tooltip: "Rejeter", className: "text-red-500 hover:text-red-700" },
+        {
+            icon: <FaEye className="text-blue-500 hover:text-blue-700" />,
+            onClick: (row: any) => handleView(row),
+            tooltip: "Voir",
+        },
+        {
+            icon: <FaCheck className="text-green-500 hover:text-green-700" />,
+            onClick: (row: any) => handleApprove(row),
+            tooltip: "Valider",
+        },
+        {
+            icon: <FaTimes className="text-red-500 hover:text-red-700" />,
+            onClick: (row: any) => handleReject(row),
+            tooltip: "Rejeter",
+        },
     ];
 
     const handleView = (row: any) => {
@@ -48,7 +63,7 @@ const PendingStudents: React.FC = () => {
             await approveStudent(row.id);
             setToast({ message: "Étudiant validé avec succès", type: "success" });
         } catch (error: any) {
-            setToast({ message: error.message, type: "error" });
+            setToast({ message: error.message || "Erreur lors de la validation", type: "error" });
         }
     };
 
@@ -66,14 +81,21 @@ const PendingStudents: React.FC = () => {
             setRejectReason("");
             setSelectedStudent(null);
         } catch (error: any) {
-            setToast({ message: error.message, type: "error" });
+            setToast({ message: error.message || "Erreur lors du rejet", type: "error" });
         }
     };
 
     return (
+        <>
+        <PageBreadcrumb pageTitle="Liste d'attente" />
         <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Étudiants en attente</h2>
-            <DataTable columns={columns} data={pendingStudents} actions={actions} />
+            {/*<h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Étudiants en attente</h2>*/}
+            <DataTable
+                columns={columns}
+                data={pendingStudents}
+                actions={actions}
+                initialState={{ pagination: { pageIndex: 0, pageSize: 10 } }}
+            />
 
             {/* Modal Voir */}
             <Modal isOpen={isViewModalOpen} onClose={() => setIsViewModalOpen(false)} className="max-w-2xl p-6">
@@ -162,6 +184,7 @@ const PendingStudents: React.FC = () => {
 
             {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
         </div>
+        </>
     );
 };
 

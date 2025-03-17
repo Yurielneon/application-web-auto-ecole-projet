@@ -8,7 +8,7 @@ import StudentManager from "@/components/features/student/StudentManager";
 export default function StudentListePage() {
     return (
         <>
-            <PageBreadcrumb pageTitle="Les Cours" />
+            <PageBreadcrumb pageTitle="Liste des étudiants" />
         <StudentManager/>
         </>
     );

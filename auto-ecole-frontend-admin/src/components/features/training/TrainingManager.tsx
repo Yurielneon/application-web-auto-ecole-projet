@@ -1,18 +1,22 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { useTraining } from "@/contexts/TrainingContext";
-import { Column } from "react-table";
+import { ColumnDef } from "@tanstack/react-table"; // Changement ici
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/button/Button";
-import DataTable from "@/components/tables/datatable";
+import DataTable from "@/components/tables/datatable"; // Nouvelle DataTable
 import { Modal } from "@/components/ui/modal";
 import Input from "@/components/custom-ui/input";
 import Select from "@/components/form/Select";
-import Label from "@/components/form/Label"; 
+import Label from "@/components/form/Label";
 import Toast from "@/components/custom-ui/Toast";
 import ConfirmModal from "@/components/custom-ui/ConfirmModal";
+import ImageUpload from "@/components/ui/image-upload";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 const TrainingManager: React.FC = () => {
     const { trainings, categories, loading, addTraining, editTraining, removeTraining } = useTraining();
@@ -23,66 +27,82 @@ const TrainingManager: React.FC = () => {
     const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
     const router = useRouter();
 
-    // États pour le formulaire
-    const [title, setTitle] = useState("");
-    const [description, setDescription] = useState(""); // Ajout de description
-    const [startDate, setStartDate] = useState("");
-    const [durationWeeks, setDurationWeeks] = useState("");
-    const [price, setPrice] = useState("");
-    const [categoryId, setCategoryId] = useState("");
-    const [registrationEndDate, setRegistrationEndDate] = useState("");
-    const [isTitleValid, setIsTitleValid] = useState(false);
-    const [isDescriptionValid, setIsDescriptionValid] = useState(false); // Validation pour description
-    const [isStartDateValid, setIsStartDateValid] = useState(false);
-    const [isDurationValid, setIsDurationValid] = useState(false);
-    const [isPriceValid, setIsPriceValid] = useState(false);
-    const [isCategoryValid, setIsCategoryValid] = useState(false);
-    const [isRegistrationEndDateValid, setIsRegistrationEndDateValid] = useState(false);
+    const [formData, setFormData] = useState({
+        title: "",
+        description: "",
+        startDate: "",
+        duration_weeks: "",
+        price: "",
+        category_id: "",
+        registrationEndDate: "",
+        covering: null as File | null,
+    });
+    const [originalCovering, setOriginalCovering] = useState<string | null>(null);
+    const [isValid, setIsValid] = useState({
+        title: false,
+        description: false,
+        startDate: false,
+        duration_weeks: false,
+        price: false,
+        category_id: false,
+        registrationEndDate: false,
+        covering: false,
+    });
 
-    const isFormValid =
-        isTitleValid &&
-        isDescriptionValid &&
-        isStartDateValid &&
-        isDurationValid &&
-        isPriceValid &&
-        isCategoryValid &&
-        isRegistrationEndDateValid;
-
-    // Colonnes pour DataTable (sans description)
-    const columns: Column<any>[] = [
-        { Header: "ID", accessor: "id" },
-        { Header: "Titre", accessor: "title" },
-        { Header: "Catégorie", accessor: "category.name" },
-        { Header: "Date de début", accessor: "start_date" },
-        { Header: "Durée (semaines)", accessor: "duration_weeks" },
-        { Header: "Prix (Ar)", accessor: "price" },
+    // Colonnes adaptées pour TanStack Table v8
+    const columns: ColumnDef<any>[] = [
+        { header: "ID", id: "id", cell: ({ row }) => row.original.id },
+        { header: "Titre", id: "title", cell: ({ row }) => row.original.title },
+        {
+            header: "Catégorie",
+            id: "category.name",
+            cell: ({ row }) => row.original.category?.name || "",
+        },
+        {
+            header: "Date de début",
+            id: "start_date",
+            cell: ({ row }) => row.original.start_date,
+        },
+        {
+            header: "Durée (semaines)",
+            id: "duration_weeks",
+            cell: ({ row }) => row.original.duration_weeks,
+        },
+        { header: "Prix (Ar)", id: "price", cell: ({ row }) => row.original.price },
     ];
 
-    // Actions pour DataTable
+    // Actions avec styles adaptés
     const actions = [
         {
             icon: <FaEye className="text-blue-500 hover:text-blue-700" />,
-            onClick: (row: any) => router.push(`/trainings/${row.id}`),
+            onClick: (row: any) => router.push(`/training/${row.id}`),
             tooltip: "Voir les détails",
         },
         {
             icon: <FaEdit className="text-yellow-500 hover:text-yellow-700" />,
             onClick: (row: any) => {
                 setSelectedTraining(row);
-                setTitle(row.title);
-                setDescription(row.description); // Charger description
-                setStartDate(row.start_date);
-                setDurationWeeks(row.duration_weeks.toString());
-                setPrice(row.price.toString());
-                setCategoryId(row.category_id.toString()); // Charger category_id
-                setRegistrationEndDate(row.registration_end_date);
-                setIsTitleValid(true);
-                setIsDescriptionValid(true);
-                setIsStartDateValid(true);
-                setIsDurationValid(true);
-                setIsPriceValid(true);
-                setIsCategoryValid(true);
-                setIsRegistrationEndDateValid(true);
+                setFormData({
+                    title: row.title,
+                    description: row.description,
+                    startDate: row.start_date,
+                    duration_weeks: row.duration_weeks.toString(),
+                    price: row.price.toString(),
+                    category_id: row.category_id.toString(),
+                    registrationEndDate: row.registration_end_date,
+                    covering: null,
+                });
+                setOriginalCovering(row.covering);
+                setIsValid({
+                    title: true,
+                    description: true,
+                    startDate: true,
+                    duration_weeks: true,
+                    price: true,
+                    category_id: true,
+                    registrationEndDate: true,
+                    covering: !!row.covering,
+                });
                 setIsEditModalOpen(true);
             },
             tooltip: "Modifier",
@@ -98,32 +118,43 @@ const TrainingManager: React.FC = () => {
     ];
 
     const resetForm = () => {
-        setTitle("");
-        setDescription(""); // Réinitialiser description
-        setStartDate("");
-        setDurationWeeks("");
-        setPrice("");
-        setCategoryId("");
-        setRegistrationEndDate("");
-        setIsTitleValid(false);
-        setIsDescriptionValid(false);
-        setIsStartDateValid(false);
-        setIsDurationValid(false);
-        setIsPriceValid(false);
-        setIsCategoryValid(false);
-        setIsRegistrationEndDateValid(false);
+        setFormData({
+            title: "",
+            description: "",
+            startDate: "",
+            duration_weeks: "",
+            price: "",
+            category_id: "",
+            registrationEndDate: "",
+            covering: null,
+        });
+        setOriginalCovering(null);
+        setIsValid({
+            title: false,
+            description: false,
+            startDate: false,
+            duration_weeks: false,
+            price: false,
+            category_id: false,
+            registrationEndDate: false,
+            covering: false,
+        });
     };
 
     const handleAddTraining = async () => {
-        const data = {
-            title,
-            description, // Inclure description
-            start_date: startDate,
-            duration_weeks: parseInt(durationWeeks),
-            price: parseFloat(price),
-            category_id: parseInt(categoryId),
-            registration_end_date: registrationEndDate,
-        };
+        const data = new FormData();
+        Object.entries(formData).forEach(([key, value]) => {
+            if (value !== null && value !== "") {
+                data.append(
+                    key === "startDate"
+                        ? "start_date"
+                        : key === "registrationEndDate"
+                            ? "registration_end_date"
+                            : key,
+                    value as any
+                );
+            }
+        });
 
         try {
             await addTraining(data);
@@ -131,24 +162,35 @@ const TrainingManager: React.FC = () => {
             setIsAddModalOpen(false);
             resetForm();
         } catch (err: any) {
-            const errorMessage = err.errors
-                ? Object.values(err.errors).flat().join(", ")
-                : err.message || "Erreur lors de l’ajout";
-            setToast({ message: errorMessage, type: "error" });
+            setToast({
+                message: err.errors
+                    ? Object.values(err.errors).flat().join(", ")
+                    : err.message || "Erreur lors de l’ajout",
+                type: "error",
+            });
         }
     };
 
     const handleEditTraining = async () => {
         if (!selectedTraining) return;
-        const data = {
-            title,
-            description, // Inclure description
-            start_date: startDate,
-            duration_weeks: parseInt(durationWeeks),
-            price: parseFloat(price),
-            category_id: parseInt(categoryId),
-            registration_end_date: registrationEndDate,
-        };
+
+        const data = new FormData();
+        Object.entries(formData).forEach(([key, value]) => {
+            if (key === "covering" && value === null && originalCovering) {
+                return;
+            }
+            if (value !== null && value !== "") {
+                data.append(
+                    key === "startDate"
+                        ? "start_date"
+                        : key === "registrationEndDate"
+                            ? "registration_end_date"
+                            : key,
+                    value as any
+                );
+            }
+        });
+        data.append("id", selectedTraining.id.toString());
 
         try {
             await editTraining(selectedTraining.id, data);
@@ -157,10 +199,12 @@ const TrainingManager: React.FC = () => {
             resetForm();
             setSelectedTraining(null);
         } catch (err: any) {
-            const errorMessage = err.errors
-                ? Object.values(err.errors).flat().join(", ")
-                : err.message || "Erreur lors de la modification";
-            setToast({ message: errorMessage, type: "error" });
+            setToast({
+                message: err.errors
+                    ? Object.values(err.errors).flat().join(", ")
+                    : err.message || "Erreur lors de la modification",
+                type: "error",
+            });
         }
     };
 
@@ -172,125 +216,182 @@ const TrainingManager: React.FC = () => {
             setIsConfirmModalOpen(false);
             setSelectedTraining(null);
         } catch (err: any) {
-            const errorMessage = err.errors
-                ? Object.values(err.errors).flat().join(", ")
-                : err.message || "Erreur lors de la suppression";
-            setToast({ message: errorMessage, type: "error" });
+            setToast({
+                message: err.errors
+                    ? Object.values(err.errors).flat().join(", ")
+                    : err.message || "Erreur lors de la suppression",
+                type: "error",
+            });
         }
     };
 
-    const today = new Date().toISOString().split("T")[0]; // Date d’aujourd’hui pour restriction
+    const today = new Date().toISOString().split("T")[0];
+    const isFormValid = Object.values(isValid).every(Boolean);
+
+    const renderFormFields = (isEditMode: boolean = false) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <Label htmlFor="title">Titre *</Label>
+                <Input
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
+                    onValidationChange={(valid) => setIsValid((prev) => ({ ...prev, title: valid }))}
+                    placeholder="Titre"
+                    regex={/.{3,}/}
+                    errorMessage="Le titre doit avoir au moins 3 caractères"
+                />
+            </div>
+            <div>
+                <Label htmlFor="description">Description *</Label>
+                <Input
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+                    onValidationChange={(valid) => setIsValid((prev) => ({ ...prev, description: valid }))}
+                    placeholder="Description"
+                    regex={/.{5,}/}
+                    errorMessage="La description doit avoir au moins 5 caractères"
+                />
+            </div>
+            <div>
+                <Label htmlFor="startDate">Date de début *</Label>
+                <Input
+                    id="startDate"
+                    type="date"
+                    value={formData.startDate}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, startDate: e.target.value }))}
+                    onValidationChange={(valid) => setIsValid((prev) => ({ ...prev, startDate: valid }))}
+                    min={today}
+                    regex={/.+/}
+                    errorMessage="La date de début doit être aujourd’hui ou après"
+                />
+            </div>
+            <div>
+                <Label htmlFor="duration_weeks">Durée (semaines) *</Label>
+                <Input
+                    id="duration_weeks"
+                    type="number"
+                    value={formData.duration_weeks}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, duration_weeks: e.target.value }))}
+                    onValidationChange={(valid) => setIsValid((prev) => ({ ...prev, duration_weeks: valid }))}
+                    min="1"
+                    regex={/^[1-9]\d*$/}
+                    errorMessage="La durée doit être un entier positif"
+                />
+            </div>
+            <div>
+                <Label htmlFor="price">Prix (Ar) *</Label>
+                <Input
+                    id="price"
+                    type="number"
+                    value={formData.price}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, price: e.target.value }))}
+                    onValidationChange={(valid) => setIsValid((prev) => ({ ...prev, price: valid }))}
+                    min="0"
+                    step={0.01}
+                    regex={/^\d+(\.\d{1,2})?$/}
+                    errorMessage="Le prix doit être un nombre valide"
+                />
+            </div>
+            <div>
+                <Label htmlFor="category_id">Catégorie *</Label>
+                <Select
+                    options={categories.map((cat) => ({ value: cat.id.toString(), label: cat.name }))}
+                    value={formData.category_id}
+                    onChange={(value) => {
+                        setFormData((prev) => ({ ...prev, category_id: value }));
+                        setIsValid((prev) => ({ ...prev, category_id: !!value }));
+                    }}
+                    placeholder="Sélectionner une catégorie"
+                />
+                {!isValid.category_id && (
+                    <p className="text-xs text-red-500 mt-1">La catégorie est requise</p>
+                )}
+            </div>
+            <div>
+                <Label htmlFor="registrationEndDate">Date de fin d’inscription *</Label>
+                <Input
+                    id="registrationEndDate"
+                    type="date"
+                    value={formData.registrationEndDate}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, registrationEndDate: e.target.value }))}
+                    onValidationChange={(valid) => setIsValid((prev) => ({ ...prev, registrationEndDate: valid }))}
+                    min={today}
+                    regex={/.+/}
+                    errorMessage="La date de fin d’inscription doit être aujourd’hui ou après"
+                />
+            </div>
+            <div>
+                <Label htmlFor="covering">Image de couverture {isEditMode ? "" : "*"}</Label>
+                {isEditMode && originalCovering && !formData.covering && (
+                    <Image
+                        src={`${API_URL}/storage/${originalCovering}`}
+                        alt="Image de couverture"
+                        width={100}
+                        height={100}
+                        className="object-cover rounded mb-2"
+                    />
+                )}
+                <ImageUpload
+                    onImageSelect={(file) => {
+                        setFormData((prev) => ({ ...prev, covering: file }));
+                        setIsValid((prev) => ({
+                            ...prev,
+                            covering: !!file || (isEditMode && !!originalCovering),
+                        }));
+                    }}
+                    required={!isEditMode}
+                    shape="square"
+                    initialImage={
+                        isEditMode && originalCovering ? `${API_URL}/storage/${originalCovering}` : undefined
+                    }
+                />
+            </div>
+        </div>
+    );
 
     return (
         <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Gestion des formations en cours</h2>
-            <Button size="sm" onClick={() => setIsAddModalOpen(true)} className="mb-4 bg-blue-500 hover:bg-blue-600 text-white">
+            {/*<h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Gestion des formations en cours</h2>*/}
+            <Button
+                size="sm"
+                onClick={() => setIsAddModalOpen(true)}
+                className="mb-4 bg-blue-500 hover:bg-blue-600 text-white"
+            >
                 Ajouter une formation
             </Button>
 
             {loading ? (
                 <p className="text-gray-700 dark:text-gray-300">Chargement...</p>
             ) : (
-                <DataTable columns={columns} data={trainings} actions={actions} />
+                <DataTable
+                    columns={columns}
+                    data={trainings}
+                    actions={actions}
+                    initialState={{ pagination: { pageIndex: 0, pageSize: 10 } }}
+                />
             )}
 
-            {/* Modal d’ajout */}
-            <Modal isOpen={isAddModalOpen} onClose={() => { setIsAddModalOpen(false); resetForm(); }} className="max-w-2xl p-6">
+            <Modal
+                isOpen={isAddModalOpen}
+                onClose={() => {
+                    setIsAddModalOpen(false);
+                    resetForm();
+                }}
+                className="max-w-2xl p-6"
+            >
                 <h4 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">Ajouter une formation</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <Label htmlFor="title">Titre *</Label>
-                        <Input
-                            id="title"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            onValidationChange={(valid) => setIsTitleValid(valid)}
-                            placeholder="Titre"
-                            regex={/.{3,}/}
-                            errorMessage="Le titre doit avoir au moins 3 caractères"
-                        />
-                    </div>
-                    <div>
-                        <Label htmlFor="description">Description *</Label>
-                        <Input
-                            id="description"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            onValidationChange={(valid) => setIsDescriptionValid(valid)}
-                            placeholder="Description"
-                            regex={/.{5,}/}
-                            errorMessage="La description doit avoir au moins 5 caractères"
-                        />
-                    </div>
-                    <div>
-                        <Label htmlFor="startDate">Date de début *</Label>
-                        <Input
-                            id="startDate"
-                            type="date"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            onValidationChange={(valid) => setIsStartDateValid(valid)}
-                            min={today}
-                            regex={/.+/}
-                            errorMessage="La date de début doit être aujourd’hui ou après"
-                        />
-                    </div>
-                    <div>
-                        <Label htmlFor="durationWeeks">Durée (semaines) *</Label>
-                        <Input
-                            id="durationWeeks"
-                            type="number"
-                            value={durationWeeks}
-                            onChange={(e) => setDurationWeeks(e.target.value)}
-                            onValidationChange={(valid) => setIsDurationValid(valid)}
-                            min="1"
-                            regex={/^[1-9]\d*$/}
-                            errorMessage="La durée doit être un entier positif"
-                        />
-                    </div>
-                    <div>
-                        <Label htmlFor="price">Prix (Ar) *</Label>
-                        <Input
-                            id="price"
-                            type="number"
-                            value={price}
-                            onChange={(e) => setPrice(e.target.value)}
-                            onValidationChange={(valid) => setIsPriceValid(valid)}
-                            min="0"
-                            step="0.01"
-                            regex={/^\d+(\.\d{1,2})?$/}
-                            errorMessage="Le prix doit être un nombre valide"
-                        />
-                    </div>
-                    <div>
-                        <Label htmlFor="categoryId">Catégorie *</Label>
-                        <Select
-                            options={categories.map((cat) => ({ value: cat.id.toString(), label: cat.name }))}
-                            value={categoryId}
-                            onChange={(value) => {
-                                setCategoryId(value);
-                                setIsCategoryValid(!!value);
-                            }}
-                            placeholder="Sélectionner une catégorie"
-                        />
-                        {!isCategoryValid && <p className="text-xs text-red-500 mt-1">La catégorie est requise</p>}
-                    </div>
-                    <div>
-                        <Label htmlFor="registrationEndDate">Date de fin d’inscription *</Label>
-                        <Input
-                            id="registrationEndDate"
-                            type="date"
-                            value={registrationEndDate}
-                            onChange={(e) => setRegistrationEndDate(e.target.value)}
-                            onValidationChange={(valid) => setIsRegistrationEndDateValid(valid)}
-                            min={today} // Restriction à aujourd’hui ou après
-                            regex={/.+/}
-                            errorMessage="La date de fin d’inscription doit être aujourd’hui ou après"
-                        />
-                    </div>
-                </div>
+                {renderFormFields(false)}
                 <div className="flex justify-end gap-3 mt-6">
-                    <Button variant="outline" size="sm" onClick={() => { setIsAddModalOpen(false); resetForm(); }}>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                            setIsAddModalOpen(false);
+                            resetForm();
+                        }}
+                    >
                         Annuler
                     </Button>
                     <Button size="sm" onClick={handleAddTraining} disabled={!isFormValid}>
@@ -299,103 +400,25 @@ const TrainingManager: React.FC = () => {
                 </div>
             </Modal>
 
-            {/* Modal de modification */}
-            <Modal isOpen={isEditModalOpen} onClose={() => { setIsEditModalOpen(false); resetForm(); }} className="max-w-2xl p-6">
+            <Modal
+                isOpen={isEditModalOpen}
+                onClose={() => {
+                    setIsEditModalOpen(false);
+                    resetForm();
+                }}
+                className="max-w-2xl p-6"
+            >
                 <h4 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">Modifier la formation</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <Label htmlFor="title">Titre *</Label>
-                        <Input
-                            id="title"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            onValidationChange={(valid) => setIsTitleValid(valid)}
-                            placeholder="Titre"
-                            regex={/.{3,}/}
-                            errorMessage="Le titre doit avoir au moins 3 caractères"
-                        />
-                    </div>
-                    <div>
-                        <Label htmlFor="description">Description *</Label>
-                        <Input
-                            id="description"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            onValidationChange={(valid) => setIsDescriptionValid(valid)}
-                            placeholder="Description"
-                            regex={/.{5,}/}
-                            errorMessage="La description doit avoir au moins 5 caractères"
-                        />
-                    </div>
-                    <div>
-                        <Label htmlFor="startDate">Date de début *</Label>
-                        <Input
-                            id="startDate"
-                            type="date"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            onValidationChange={(valid) => setIsStartDateValid(valid)}
-                            min={today}
-                            regex={/.+/}
-                            errorMessage="La date de début doit être aujourd’hui ou après"
-                        />
-                    </div>
-                    <div>
-                        <Label htmlFor="durationWeeks">Durée (semaines) *</Label>
-                        <Input
-                            id="durationWeeks"
-                            type="number"
-                            value={durationWeeks}
-                            onChange={(e) => setDurationWeeks(e.target.value)}
-                            onValidationChange={(valid) => setIsDurationValid(valid)}
-                            min="1"
-                            regex={/^[1-9]\d*$/}
-                            errorMessage="La durée doit être un entier positif"
-                        />
-                    </div>
-                    <div>
-                        <Label htmlFor="price">Prix (Ar) *</Label>
-                        <Input
-                            id="price"
-                            type="number"
-                            value={price}
-                            onChange={(e) => setPrice(e.target.value)}
-                            onValidationChange={(valid) => setIsPriceValid(valid)}
-                            min="0"
-                            step="0.01"
-                            regex={/^\d+(\.\d{1,2})?$/}
-                            errorMessage="Le prix doit être un nombre valide"
-                        />
-                    </div>
-                    <div>
-                        <Label htmlFor="categoryId">Catégorie *</Label>
-                        <Select
-                            options={categories.map((cat) => ({ value: cat.id.toString(), label: cat.name }))}
-                            value={categoryId} // La valeur est bien chargée ici
-                            onChange={(value) => {
-                                setCategoryId(value);
-                                setIsCategoryValid(!!value);
-                            }}
-                            placeholder="Sélectionner une catégorie"
-                        />
-                        {!isCategoryValid && <p className="text-xs text-red-500 mt-1">La catégorie est requise</p>}
-                    </div>
-                    <div>
-                        <Label htmlFor="registrationEndDate">Date de fin d’inscription *</Label>
-                        <Input
-                            id="registrationEndDate"
-                            type="date"
-                            value={registrationEndDate}
-                            onChange={(e) => setRegistrationEndDate(e.target.value)}
-                            onValidationChange={(valid) => setIsRegistrationEndDateValid(valid)}
-                            min={today} // Restriction à aujourd’hui ou après
-                            regex={/.+/}
-                            errorMessage="La date de fin d’inscription doit être aujourd’hui ou après"
-                        />
-                    </div>
-                </div>
+                {renderFormFields(true)}
                 <div className="flex justify-end gap-3 mt-6">
-                    <Button variant="outline" size="sm" onClick={() => { setIsEditModalOpen(false); resetForm(); }}>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                            setIsEditModalOpen(false);
+                            resetForm();
+                        }}
+                    >
                         Annuler
                     </Button>
                     <Button size="sm" onClick={handleEditTraining} disabled={!isFormValid}>
@@ -404,7 +427,6 @@ const TrainingManager: React.FC = () => {
                 </div>
             </Modal>
 
-            {/* Modal de confirmation */}
             <ConfirmModal
                 isOpen={isConfirmModalOpen}
                 onClose={() => setIsConfirmModalOpen(false)}
@@ -412,7 +434,6 @@ const TrainingManager: React.FC = () => {
                 message="Êtes-vous sûr de vouloir supprimer cette formation ?"
             />
 
-            {/* Toast */}
             {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
         </div>
     );

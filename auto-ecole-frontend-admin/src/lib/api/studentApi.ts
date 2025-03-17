@@ -5,8 +5,10 @@ const api = axios.create({ baseURL: "http://127.0.0.1:8000/api" });
 export const fetchStudents = () => api.get("/students").then((res) => res.data);
 export const createStudent = (data: FormData) =>
     api.post("/students", data, { headers: { "Content-Type": "multipart/form-data" } }).then((res) => res.data);
-export const updateStudent = (id: number, data: FormData) =>
-    api.put(`/students/${id}`, data, { headers: { "Content-Type": "multipart/form-data" } }).then((res) => res.data);
+export const updateStudent = (id: number, data: FormData) => {
+  //  data.append("_method", "PUT"); // Spoofing pour indiquer une mise à jour
+    return api.post(`/students/${id}`, data, { headers: { "Content-Type": "multipart/form-data" } }).then((res) => res.data);
+};
 export const deleteStudent = (id: number) => api.delete(`/students/${id}`).then((res) => res.data);
 export const fetchNotifications = () => api.get("/notifications").then((res) => res.data);
 export const markNotificationAsRead = (id: number) => api.put(`/notifications/${id}/read`).then((res) => res.data);

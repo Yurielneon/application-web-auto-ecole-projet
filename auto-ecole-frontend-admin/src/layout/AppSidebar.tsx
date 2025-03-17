@@ -40,16 +40,17 @@ const navItems: NavItem[] = [
     subItems: [
       { name: "Liste des Etudiants", path: "/students-list", pro: false },
       { name: "Validation Inscription", path: "/registration", pro: false },
-      { name: "Inscription Refusée", path: "/registration-refused", pro: false },
+      // { name: "Inscription Refusée", path: "/registration-refused", pro: false },
     ],
   },
   {
     name: "Formation",
     icon: <ListIcon />,
-    subItems: [
-      { name: "En cours", path: "/ongoing-training", pro: false },
-      { name: "Terminée", path: "/completed-training", pro: false },      
-    ],
+    path:"/ongoing-training"
+    // subItems: [
+    //   { name: "En cours", path: "/ongoing-training", pro: false },
+    //   { name: "Terminée", path: "/completed-training", pro: false },      
+    // ],
   },
 
   {

@@ -9,6 +9,7 @@ import { StudentProvider } from "@/contexts/StudentContext";
 import { TrainingProvider } from "@/contexts/TrainingContext";
 import { CourseProvider } from "@/contexts/CourseContext";
 import { CategoryProvider } from "@/contexts/CategoryContext";
+import {StatisticsProvider} from "@/contexts/StatisticsContext";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
@@ -25,6 +26,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <TrainingProvider>
           <CourseProvider>
             <CategoryProvider>
+              <StatisticsProvider>
               <div className="min-h-screen xl:flex">
                 {/* Sidebar and Backdrop */}
                 <AppSidebar />
@@ -39,6 +41,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <div className="p-4 mx-auto max-w-7xl md:p-6">{children}</div>
                 </div>
               </div>
+              </StatisticsProvider>
             </CategoryProvider>
           </CourseProvider>
         </TrainingProvider>

@@ -2,11 +2,11 @@
 
 import React, { useState } from "react";
 import { useCourse } from "@/contexts/CourseContext";
-import {Column} from "react-table";
-import {FaEdit, FaEye, FaTimes, FaTrash} from "react-icons/fa";
+import { ColumnDef } from "@tanstack/react-table"; // Changement ici
+import { FaEdit, FaEye, FaTimes } from "react-icons/fa";
 import Button from "@/components/ui/button/Button";
-import DataTable from "@/components/tables/datatable";
-import {Modal} from "@/components/ui/modal";
+import DataTable from "@/components/tables/datatable"; // Nouvelle DataTable
+import { Modal } from "@/components/ui/modal";
 import Input from "@/components/custom-ui/input";
 import Select from "@/components/form/Select";
 import FileInput from "@/components/form/input/FileInput";
@@ -14,9 +14,8 @@ import ConfirmModal from "@/components/custom-ui/ConfirmModal";
 import Toast from "@/components/custom-ui/Toast";
 import Label from "@/components/form/Label";
 
-
 const CourseManager: React.FC = () => {
-    const {courses, loading, addCourse, editCourse, removeCourse} = useCourse();
+    const { courses, loading, addCourse, editCourse, removeCourse } = useCourse();
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
@@ -33,22 +32,22 @@ const CourseManager: React.FC = () => {
 
     const isFormValid = isNameValid && isTypeValid && isFileValid;
 
-    // Colonnes pour DataTable
-    const columns: Column<any>[] = [
-        {Header: "Nom", accessor: "name"},
-        {Header: "Type", accessor: "type"},
+    // Colonnes adaptées pour TanStack Table v8
+    const columns: ColumnDef<any>[] = [
+        { header: "Nom", id: "name", cell: ({ row }) => row.original.name },
+        { header: "Type", id: "type", cell: ({ row }) => row.original.type },
         {
-            Header: "Fichier",
-            accessor: "file_path",
-            Cell: ({ value }) => (
+            header: "Fichier",
+            id: "file_path",
+            cell: ({ row }) => (
                 <a
-                    href={`http://localhost:8000/storage/${value}`}
+                    href={`http://localhost:8000/storage/${row.original.file_path}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-500"
+                    className="text-blue-500 hover:underline"
                     onClick={(e) => {
                         e.preventDefault();
-                        window.location.href=`http://localhost:8000/storage/${value}`;
+                        window.location.href = `http://localhost:8000/storage/${row.original.file_path}`;
                     }}
                 >
                     Voir PDF
@@ -57,16 +56,15 @@ const CourseManager: React.FC = () => {
         },
     ];
 
-    // Actions pour DataTable
+    // Actions avec styles adaptés
     const actions = [
         {
-            icon: <FaEye className="h-5 w-5" />,
+            icon: <FaEye className="text-blue-500 hover:text-blue-700" />,
             onClick: (row: any) => window.open(`http://localhost:8000/storage/${row.file_path}`, `_blank`),
-            className: "p-1 rounded-full text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900",
             tooltip: "Voir le PDF",
         },
         {
-            icon: <FaEdit className="h-5 w-5" />,
+            icon: <FaEdit className="text-yellow-500 hover:text-yellow-700" />,
             onClick: (row: any) => {
                 setSelectedCourse(row);
                 setName(row.name);
@@ -77,16 +75,14 @@ const CourseManager: React.FC = () => {
                 setIsFileValid(true); // Fichier optionnel pour modification
                 setIsEditModalOpen(true);
             },
-            className: "p-1 rounded-full text-green-600 hover:bg-green-100 dark:hover:bg-green-900",
             tooltip: "Modifier",
         },
         {
-            icon: <FaTimes className="h-5 w-5" />,
+            icon: <FaTimes className="text-red-500 hover:text-red-700" />,
             onClick: (row: any) => {
                 setSelectedCourse(row);
                 setIsConfirmModalOpen(true);
             },
-            className: "p-1 rounded-full text-red-600 hover:bg-red-100 dark:hover:bg-red-900",
             tooltip: "Supprimer",
         },
     ];
@@ -121,7 +117,7 @@ const CourseManager: React.FC = () => {
         }
     };
 
-// Gérer la modification
+    // Gérer la modification
     const handleEditCourse = async () => {
         if (!selectedCourse) return;
         const formData = new FormData();
@@ -143,7 +139,7 @@ const CourseManager: React.FC = () => {
         }
     };
 
-// Gérer la suppression
+    // Gérer la suppression
     const handleDeleteCourse = async () => {
         if (!selectedCourse) return;
         try {
@@ -160,152 +156,184 @@ const CourseManager: React.FC = () => {
     };
 
     return (
-            <div className="p-6">
-                <Button size="sm" onClick={() => setIsAddModalOpen(true)} className="mb-4">
-                    Ajouter un cours
-                </Button>
+        <div className="p-6">
+            <Button
+                size="sm"
+                onClick={() => setIsAddModalOpen(true)}
+                className="mb-4 bg-blue-500 hover:bg-blue-600 text-white"
+            >
+                Ajouter un cours
+            </Button>
 
-                {loading ? (
-                    <p>Chargement...</p>
-                ) : (
-                    <DataTable columns={columns} data={courses} actions={actions}/>
-                )}
-
-                {/* Modal d’ajout */}
-                <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} className="max-w-lg p-6">
-                    <h4 className="text-lg font-medium mb-4  dark:text-gray-400">Ajouter un cours</h4>
-                    <div className="space-y-4">
-                        <div>
-                            
-                            <Input
-                                label={"Nom*"}
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                onValidationChange={(valid) => setIsNameValid(valid)}
-                                placeholder="Nom du cours"
-                                regex={/.+/} // Requis
-                                errorMessage="Le nom est requis"
-                            />
-                        </div>
-                        <div>
-                            <Label>Type *</Label>
-                            <Select
-                                
-                                options={[
-                                    {value: "common", label: "Commun"},
-                                    {value: "specific", label: "Spécifique"},
-                                ]}
-                                value={type}
-                                onChange={(value) => {
-                                    setType(value);
-                                    setIsTypeValid(!!value);
-                                }}
-                                placeholder="Sélectionner un type"
-                            />
-                            {!isTypeValid && <p className="text-xs text-red-500 mt-1">Le type est requis</p>}
-                        </div>
-                        <div>
-                            <Label >Fichier PDF *</Label>
-                            <FileInput
-                                onChange={(e) => {
-                                    const selectedFile = e.target.files?.[0] || null;
-                                    setFile(selectedFile);
-                                    setIsFileValid(!!selectedFile && selectedFile.type === "application/pdf");
-                                }}
-                            />
-                            {!isFileValid && <p className="text-xs text-red-500 mt-1">Un fichier PDF est requis</p>}
-                        </div>
-                    </div>
-                    <div className="flex justify-end gap-3 mt-6">
-                        <Button variant="outline" size="sm" onClick={() => setIsAddModalOpen(false)}>
-                            Annuler
-                        </Button>
-                        <Button size="sm" onClick={handleAddCourse} disabled={!isFormValid}>
-                            Ajouter
-                        </Button>
-                    </div>
-                </Modal>
-
-                {/* Modal de modification */}
-                <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} className="max-w-lg p-6">
-                    <h4 className="text-lg font-medium mb-4  dark:text-gray-400">Modifier le cours</h4>
-                    <div className="space-y-4">
-                        <div>
-                            <Label className="block text-sm font-medium mb-1">Nom *</Label>
-                            <Input
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                onValidationChange={(valid) => setIsNameValid(valid)}
-                                placeholder="Nom du cours"
-                                regex={/.+/}
-                                errorMessage="Le nom est requis"
-                            />
-                        </div>
-                        <div>
-                            <Label className="block text-sm font-medium mb-1">Type *</Label>
-                            <Select
-                                options={[
-                                    { value: "common", label: "Commun" },
-                                    { value: "specific", label: "Spécifique" },
-                                ]}
-                                value={type}
-                                onChange={(value) => {
-                                    setType(value);
-                                    setIsTypeValid(!!value);
-                                }}
-                                placeholder="Sélectionner un type"
-                            />
-                            {!isTypeValid && <p className="text-xs text-red-500 mt-1">Le type est requis</p>}
-                        </div>
-                        <div>
-                            <Label className="block text-sm font-medium mb-1">Fichier PDF (optionnel)</Label>
-                            {selectedCourse && (
-                                <p className="text-xs text-gray-500 mb-2">
-                                    Fichier actuel :{" "}
-                                    <a href={`http://localhost:8000/storage/${selectedCourse.file_path}`} target="_blank" className="text-blue-500">
-                                        Voir le PDF actuel
-                                    </a>
-                                </p>
-                            )}
-                            <FileInput
-                                onChange={(e) => {
-                                    const selectedFile = e.target.files?.[0] || null;
-                                    setFile(selectedFile);
-                                    setIsFileValid(selectedFile ? selectedFile.type === "application/pdf" : true);
-                                }}
-                            />
-                            {!isFileValid && <p className="text-xs text-red-500 mt-1">Le fichier doit être un PDF</p>}
-                        </div>
-                    </div>
-                    <div className="flex justify-end gap-3 mt-6">
-                        <Button variant="outline" size="sm" onClick={() => setIsEditModalOpen(false)}>
-                            Annuler
-                        </Button>
-                        <Button size="sm" onClick={handleEditCourse} disabled={!isFormValid}>
-                            Sauvegarder
-                        </Button>
-                    </div>
-                </Modal>
-
-                {/* Modal de confirmation */}
-                <ConfirmModal
-                    isOpen={isConfirmModalOpen}
-                    onClose={() => setIsConfirmModalOpen(false)}
-                    onConfirm={handleDeleteCourse}
-                    message="Êtes-vous sûr de vouloir supprimer ce cours ?"
+            {loading ? (
+                <p>Chargement...</p>
+            ) : (
+                <DataTable
+                    columns={columns}
+                    data={courses}
+                    actions={actions}
+                    initialState={{ pagination: { pageIndex: 0, pageSize: 10 } }}
                 />
+            )}
 
-                {/* Toast */}
-                {toast && (
-                    <Toast
-                        message={toast.message}
-                        type={toast.type}
-                        onClose={() => setToast(null)}
-                    />
-                )}
-            </div>
+            {/* Modal d’ajout */}
+            <Modal
+                isOpen={isAddModalOpen}
+                onClose={() => {
+                    setIsAddModalOpen(false);
+                    resetForm();
+                }}
+                className="max-w-lg p-6"
+            >
+                <h4 className="text-lg font-medium mb-4 dark:text-gray-400">Ajouter un cours</h4>
+                <div className="space-y-4">
+                    <div>
+                        <Label>Nom *</Label>
+                        <Input
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            onValidationChange={(valid) => setIsNameValid(valid)}
+                            placeholder="Nom du cours"
+                            regex={/.+/} // Requis
+                            errorMessage="Le nom est requis"
+                        />
+                    </div>
+                    <div>
+                        <Label>Type *</Label>
+                        <Select
+                            options={[
+                                { value: "common", label: "Commun" },
+                                { value: "specific", label: "Spécifique" },
+                            ]}
+                            value={type}
+                            onChange={(value) => {
+                                setType(value);
+                                setIsTypeValid(!!value);
+                            }}
+                            placeholder="Sélectionner un type"
+                        />
+                        {!isTypeValid && <p className="text-xs text-red-500 mt-1">Le type est requis</p>}
+                    </div>
+                    <div>
+                        <Label>Fichier PDF *</Label>
+                        <FileInput
+                            onChange={(e) => {
+                                const selectedFile = e.target.files?.[0] || null;
+                                setFile(selectedFile);
+                                setIsFileValid(!!selectedFile && selectedFile.type === "application/pdf");
+                            }}
+                        />
+                        {!isFileValid && <p className="text-xs text-red-500 mt-1">Un fichier PDF est requis</p>}
+                    </div>
+                </div>
+                <div className="flex justify-end gap-3 mt-6">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                            setIsAddModalOpen(false);
+                            resetForm();
+                        }}
+                    >
+                        Annuler
+                    </Button>
+                    <Button size="sm" onClick={handleAddCourse} disabled={!isFormValid}>
+                        Ajouter
+                    </Button>
+                </div>
+            </Modal>
+
+            {/* Modal de modification */}
+            <Modal
+                isOpen={isEditModalOpen}
+                onClose={() => {
+                    setIsEditModalOpen(false);
+                    resetForm();
+                }}
+                className="max-w-lg p-6"
+            >
+                <h4 className="text-lg font-medium mb-4 dark:text-gray-400">Modifier le cours</h4>
+                <div className="space-y-4">
+                    <div>
+                        <Label>Nom *</Label>
+                        <Input
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            onValidationChange={(valid) => setIsNameValid(valid)}
+                            placeholder="Nom du cours"
+                            regex={/.+/}
+                            errorMessage="Le nom est requis"
+                        />
+                    </div>
+                    <div>
+                        <Label>Type *</Label>
+                        <Select
+                            options={[
+                                { value: "common", label: "Commun" },
+                                { value: "specific", label: "Spécifique" },
+                            ]}
+                            value={type}
+                            onChange={(value) => {
+                                setType(value);
+                                setIsTypeValid(!!value);
+                            }}
+                            placeholder="Sélectionner un type"
+                        />
+                        {!isTypeValid && <p className="text-xs text-red-500 mt-1">Le type est requis</p>}
+                    </div>
+                    <div>
+                        <Label>Fichier PDF (optionnel)</Label>
+                        {selectedCourse && (
+                            <p className="text-xs text-gray-500 mb-2">
+                                Fichier actuel :{" "}
+                                <a
+                                    href={`http://localhost:8000/storage/${selectedCourse.file_path}`}
+                                    target="_blank"
+                                    className="text-blue-500 hover:underline"
+                                >
+                                    Voir le PDF actuel
+                                </a>
+                            </p>
+                        )}
+                        <FileInput
+                            onChange={(e) => {
+                                const selectedFile = e.target.files?.[0] || null;
+                                setFile(selectedFile);
+                                setIsFileValid(selectedFile ? selectedFile.type === "application/pdf" : true);
+                            }}
+                        />
+                        {!isFileValid && <p className="text-xs text-red-500 mt-1">Le fichier doit être un PDF</p>}
+                    </div>
+                </div>
+                <div className="flex justify-end gap-3 mt-6">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                            setIsEditModalOpen(false);
+                            resetForm();
+                        }}
+                    >
+                        Annuler
+                    </Button>
+                    <Button size="sm" onClick={handleEditCourse} disabled={!isFormValid}>
+                        Sauvegarder
+                    </Button>
+                </div>
+            </Modal>
+
+            {/* Modal de confirmation */}
+            <ConfirmModal
+                isOpen={isConfirmModalOpen}
+                onClose={() => setIsConfirmModalOpen(false)}
+                onConfirm={handleDeleteCourse}
+                message="Êtes-vous sûr de vouloir supprimer ce cours ?"
+            />
+
+            {/* Toast */}
+            {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+        </div>
     );
-    
-}
+};
 
 export default CourseManager;

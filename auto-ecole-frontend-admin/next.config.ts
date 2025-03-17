@@ -9,6 +9,7 @@ const nextConfig = {
     return config;
   },
   images: {
+    domains: ["localhost", "mon-domaine-future.com"],
     remotePatterns: [
       {
         protocol: "http", // ou "https" selon votre environnement
