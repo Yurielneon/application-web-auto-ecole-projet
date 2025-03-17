@@ -34,18 +34,18 @@ export default function Register() {
   }
 
   return (
-    <main className="min-h-screen bg-background-100 from-blue-50 to-purple-50">
+    <main className="min-h-screen bg-background-100 from-theme-f to-theme-t">
       <Header />
       
       <div className="max-w-2xl mx-auto px-4 pt-20 pb-8">
-        <div className="bg-white rounded-lg shadow-md p-6 mt-8">
+        <div className="bg-background-200 rounded-lg shadow-md p-6 mt-8">
           <h2 className="text-2xl font-bold text-center mb-6">Activer votre compte étudiant</h2>
 
           {/* Explications */}
-          <div className="bg-blue-50 p-4 rounded-lg mb-6">
-            <p className="text-sm text-blue-800">
+          <div className="bg-theme-t p-4 rounded-lg mb-6">
+            <p className="text-sm text-white">
               ℹ️ Vous devez avoir reçu un email de validation de l'auto-école pour utiliser cette page.<br/>
-              ⚠️ Si vous avez déjà activé votre compte, <a href="/login" className="text-blue-600 underline">connectez-vous ici</a>.
+              ⚠️ Si vous avez déjà activé votre compte, <a href="/login-user" className="text-blue-400 underline">connectez-vous ici</a>.
             </p>
           </div>
 
@@ -68,6 +68,7 @@ export default function Register() {
             <div>
               <label className="block text-sm font-medium mb-1">Email de validation</label>
               <input
+              
                 type="email"
                 {...register('email', {
                   required: "L'email est obligatoire",
@@ -76,7 +77,7 @@ export default function Register() {
                     message: "Format d'email invalide"
                   }
                 })}
-                className="form-input-rounded w-full p-2 border rounded-lg"
+                className="form-input-rounded w-full p-2 border rounded-lg bg-background-100"
                 placeholder="email@example.com"
               />
               {errors.email && <span className="text-red-500 text-sm">{errors.email.message}</span>}
@@ -93,7 +94,7 @@ export default function Register() {
                     message: "Minimum 8 caractères"
                   }
                 })}
-                className="form-input-rounded w-full p-2 border rounded-lg"
+                className="form-input-rounded w-full p-2 border rounded-lg bg-background-100"
                 placeholder="••••••••"
               />
               {errors.password && <span className="text-red-500 text-sm">{errors.password.message}</span>}
@@ -108,7 +109,7 @@ export default function Register() {
                   validate: value => 
                     value === watch('password') || "Les mots de passe ne correspondent pas"
                 })}
-                className="form-input-rounded w-full p-2 border rounded-lg"
+                className="form-input-rounded w-full p-2 border rounded-lg bg-background-100"
                 placeholder="••••••••"
               />
               {errors.password_confirmation && (
@@ -119,7 +120,7 @@ export default function Register() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              className="w-full bg-theme-f text-white py-2 rounded-lg font-medium hover:bg-green-700 transition-colors"
             >
               {isSubmitting ? 'Activation en cours...' : 'Activer mon compte'}
             </button>

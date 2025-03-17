@@ -35,7 +35,7 @@ export default function useAuth() {
         }
       } catch (error) {
         localStorage.removeItem('auth_token');
-        router.push('/login-user');
+        router.push('/');
       } finally {
         setLoading(false);
       }

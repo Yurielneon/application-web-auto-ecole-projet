@@ -20,4 +20,7 @@ module.exports = {
       },
     ];
   },
+  experimental: {
+    serverComponentsExternalPackages: ['puppeteer-core', 'chrome-aws-lambda']
+  },
 }

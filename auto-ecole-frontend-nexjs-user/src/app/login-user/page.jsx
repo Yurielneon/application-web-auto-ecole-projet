@@ -47,7 +47,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded shadow-md w-96">
+      <form onSubmit={handleSubmit} className="bg-background-200 p-16 rounded-2xl shadow-md w-1/3">
         <h1 className="text-2xl mb-4">Connexion Auto-École</h1>
         
         {error && <p className="text-red-500 mb-4">{error}</p>}
@@ -55,7 +55,7 @@ export default function Login() {
         <input
           type="email"
           placeholder="Email"
-          className="w-full mb-4 p-2 border rounded"
+          className="w-full mb-4 p-2 border rounded-xl bg-background-100 "
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
@@ -63,14 +63,14 @@ export default function Login() {
         <input
           type="password"
           placeholder="Mot de passe"
-          className="w-full mb-4 p-2 border rounded"
+          className="w-full mb-4 p-2 border rounded-xl bg-background-100 "
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
         
         <button
           type="submit"
-          className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+          className="w-full bg-theme-t text-white p-2 rounded-xl hover:bg-theme-f bg-background-100 "
         >
           Se connecter
         </button>

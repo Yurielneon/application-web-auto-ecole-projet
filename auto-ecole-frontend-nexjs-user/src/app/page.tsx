@@ -261,6 +261,22 @@ export default function Home() {
           </div>
         </div>
       </section>
+      <section className="px-4 w-full" >
+        {/* Carte Google Maps */}
+        <h2 className="text-3xl font-bold text-center mb-12">Sur la carte</h2>
+
+          <div className="mt-12 bg-background-200  rounded-lg shadow-lg overflow-hidden">
+            <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3323.349317529434!2d-7.619982784798111!3d33.59624918073231!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xda7cd4778a113b1%3A0xf108b0b6e6f4f0c!2sCasablanca%20Twin%20Center!5e0!3m2!1sfr!2sma!4v1658947898487!5m2!1sfr!2sma"
+                width="100%"
+                height="400"
+                className="border-0"
+                allowFullScreen
+                loading="lazy"
+                title="Carte de localisation"
+            ></iframe>
+            </div>
+      </section>
 
       {/* Footer */}
       <footer className="bg-foreground-900 text-background-100 py-12">

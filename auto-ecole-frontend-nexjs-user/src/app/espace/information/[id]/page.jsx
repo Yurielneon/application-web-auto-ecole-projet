@@ -1,44 +1,152 @@
+// 'use client';
+// import { use, useEffect, useState } from 'react';
+// import Layout from "@/components/ui/Layout";
+// import axios from 'axios';
+
+// export default function Information({ params }) {
+//   const {id} = use(params);
+//   const [user] = useState({
+//     id: id,
+//     last_name: "Doe",
+//     first_name: "John",
+//     email: "john@autoecole.ma",
+//     cin: "AB123456",
+//     birth_date: "2000-01-01",
+//     training: {
+//       title: "Permis B Accéléré",
+//       price: 4500,
+//       start_date: "2023-09-01",
+//       duration_weeks: 8
+//     },
+//     status: "validated",
+//     payment_receipt: "PAY-2023-1234",
+//     documents: [
+//       { name: "Certificat Résidence", file: "residence.pdf" },
+//       { name: "Reçu Paiement", file: "payment.pdf" }
+//     ]
+//   });
+//   const token = localStorage.getItem('laravel_session');
+
+//   const generatePDF = async () => {
+//     try {
+    
+//       const response = await fetch(`/api/generate-pdf?studentId=${user.id}`, {
+//       headers: {
+//         'Authorization': `Bearer ${token}`,
+//         'Content-Security-Policy': 'default-src \'none\''
+//       }});
+//       const blob = await response.blob();
+      
+//       const url = window.URL.createObjectURL(blob);
+//       const a = document.createElement('a');
+//       a.href = url;
+//       a.download = 'attestation.pdf';
+//       a.click();
+//     } catch (error) {
+//       console.error('Erreur de génération:', error);
+//     }
+//   };
+//   useEffect(() => {
+//     const getAllData = async() => {
+//       try {
+//         const response = await axios.get(`http://localhost:8000/api/students/${id}`,
+//           { headers: { 'Authorization': `Bearer ${token}` } }
+//         );
+//         console.log(response.data);
+//       } catch (error) {
+//         console.error('Erreur de récupération:', error);
+//       } 
+//     }
+//     getAllData();
+//   }, [])
+
 'use client';
-import { use, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import Layout from "@/components/ui/Layout";
+import axios from 'axios';
 
 export default function Information({ params }) {
-    const {id} = use(params);
-  const [user] = useState({
-    id: id,
-    last_name: "Doe",
-    first_name: "John",
-    email: "john@autoecole.ma",
-    cin: "AB123456",
-    birth_date: "2000-01-01",
-    training: {
-      title: "Permis B Accéléré",
-      price: 4500,
-      start_date: "2023-09-01",
-      duration_weeks: 8
-    },
-    status: "validated",
-    payment_receipt: "PAY-2023-1234",
-    documents: [
-      { name: "Certificat Résidence", file: "residence.pdf" },
-      { name: "Reçu Paiement", file: "payment.pdf" }
-    ]
-  });
+  const { id } = use(params);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem('laravel_session');
+    const getAllData = async() => {
+      try {
+        const response = await axios.get(
+          `http://localhost:8000/api/students/${id}`,
+          { 
+            headers: { 
+              'Authorization': `Bearer ${token}` 
+            } 
+          }
+        );
+        const res = await axios.get(`http://localhost:8000/api/trainings/${response.data.student.training_id}`,
+          { 
+            headers: { 
+              'Authorization': `Bearer ${token}` 
+            } 
+          }
+        );        
+
+        console.log(res.data);
+        
+        // Normalisation des données
+        const userData = {
+          ...response.data.student,
+          training: res.data
+        };
+        setUser(userData);
+        setLoading(false);
+    
+      } catch (error) {
+        console.error('Erreur:', error);
+        setUser({
+          // Données par défaut
+        });
+      }
+    }
+    getAllData();
+  }, [id]);
 
   const generatePDF = async () => {
     try {
-      const response = await fetch(`/api/generate-pdf?studentId=${user.id}`);
-      const blob = await response.blob();
+      const token = localStorage.getItem('laravel_session');
+      const response = await fetch(`/api/generate-pdf?studentId=${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       
+      if (!response.ok) throw new Error('Erreur de génération');
+      
+      const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = 'attestation.pdf';
       a.click();
     } catch (error) {
-      console.error('Erreur de génération:', error);
+      console.error('Erreur:', error);
     }
   };
+
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-background-200 p-8">
+          <div className="max-w-4xl mx-auto bg-background-100 rounded-2xl shadow-lg p-6">
+            Chargement des données...
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+
 
   return (
     <Layout>
@@ -47,7 +155,7 @@ export default function Information({ params }) {
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-3xl font-bold text-white">
               <span className="bg-indigo-100 px-3 py-1 rounded-lg">👤</span>
-              Profil de {user.last_name}
+              Profil de {user?.last_name || 'l\'utilisateur'}
             </h1>
             <div className="flex gap-3">
               <button className="p-2 hover:bg-gray-100 rounded-lg">
@@ -61,18 +169,21 @@ export default function Information({ params }) {
 
           <div className="grid gap-6 md:grid-cols-2">
             <Section title="Identité">
-              <InfoItem label="Nom" value={user.last_name} />
+              <InfoItem label="Nom" value={user?.last_name || "STvee  "} />
               <InfoItem label="Prénom" value={user.first_name} />
               <InfoItem label="CIN" value={user.cin} />
               <InfoItem 
                 label="Date de Naissance" 
                 value={new Date(user.birth_date).toLocaleDateString()} 
               />
+              <label htmlFor="">{user?.last_name || "STvee  "}</label>
             </Section>
 
             <Section title="Formation">
-              <InfoItem label="Programme" value={user.training.title} />
-              <InfoItem label="Prix" value={`${user.training.price} DH`} />
+              <InfoItem label="Programme" value={user.training?.title || "title"} />
+              <InfoItem label="Prix" value={`${user.training?.price || "PriceTraining"} DH`} />
+              <InfoItem label="Description " value={`${user.training?.description || "Description"} DH`} />
+
               <InfoItem 
                 label="Statut" 
                 value={
@@ -86,16 +197,14 @@ export default function Information({ params }) {
 
             <Section title="Documents">
               <div className="space-y-2">
-                {user.documents.map((doc, i) => (
                   <a 
-                    key={i} 
+                   
                     href="#" 
                     className="flex items-center gap-2 text-indigo-600 hover:underline"
                   >
                     <DocumentIcon />
-                    {doc.name}
+                    {user.residence_certificate}
                   </a>
-                ))}
               </div>
             </Section>
           </div>
@@ -127,7 +236,7 @@ const Section = ({ title, children }) => (
 
 const InfoItem = ({ label, value }) => (
   <div className="flex justify-between py-2 border-b">
-    <span className="text-gray-500">{label}</span>
+    <span className="text-gray-500 px-2">{label}</span>
     <span className="font-medium">{value}</span>
   </div>
 );

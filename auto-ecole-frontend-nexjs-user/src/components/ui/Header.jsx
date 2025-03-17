@@ -156,7 +156,7 @@ const Header = () => {
               { name: "Accueil", path: "/"},
               { name: "Inscription", path: "/#formations"},
               { name: "Espace", path: "/espace/cours"},
-              { name: "Notification", path: "/contact"}
+              { name: "Notification", path: "/notification"}
             ].map((link) => (
               
               <Link

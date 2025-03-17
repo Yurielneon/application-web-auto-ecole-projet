@@ -4,18 +4,54 @@ import { usePathname } from 'next/navigation'
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from "./Header";
-import useAuth from '@/hooks/useAuth';
+import useAuth from '@/hooks/useAuth'; 
+import axios from 'axios';
+import { useEffect, useState } from 'react';
 
 export default function EspaceMenu ({children}: {children: React.ReactNode}) {
     
     const usePath = usePathname();
     const { isAuthenticated, loading } = useAuth();
+    const [id, setId] = useState<number | null>(null); // 1. Utilisation de useState
 
+      // Déplacer useEffect AVANT les retours conditionnels
+      useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const checkAuth = async () => {
+        try {
+            const token = localStorage.getItem('auth_token');
+            
+            if (!token) {
+            throw new Error('No token found');
+            }
+        
+            const response = await axios.get('/api/user', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
+            }
+            });
+        
+            if (response.data.user) {
+                console.log(response.data.user.id)
+
+                if (response.data?.user?.id) {
+                    setId(response.data.user.id); // 2. Mise à jour de l'état
+                }            }
+        } catch (error) {
+            console.log(error);
+        }
+        };
+
+        checkAuth();
+    }, []);
     if (loading) {
         return <div>Loading...</div>
     }
 
     if(!isAuthenticated) {
+        alert("Vous n'etes pas connecté, veuillez vous connecter ou inscrire pour acceder à cette page")
         return null;
     }
 
@@ -50,7 +86,7 @@ export default function EspaceMenu ({children}: {children: React.ReactNode}) {
                                             Contacter l`administration
                                         </div>
                                     </Link>                                
-                                    <Link href={"/espace/information/1"} className={usePath === "espace/information/"? "bg-green-500 text-black ":""} >
+                                    <Link href={`/espace/information/${id}`} className={usePath === "espace/information/"? "bg-green-500 text-black ":""} >
                                         <div className='text-foreground-100 dark:text-background-100 bg-background-100 dark:bg-foreground-100 hover:bg-theme-t hover:text-white font-semibold px-4 py-3 my-1' >
                                             Attestations et informations
                                         </div>
