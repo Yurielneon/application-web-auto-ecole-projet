@@ -62,8 +62,8 @@ class Student extends Model
         }
 
         $validator = Validator::make($data, array_merge([
-            'last_name' => 'required|string|min:3|max:50',
-            'first_name' => 'nullable|string|min:3|max:100',
+            'last_name' => 'required|string|min:2|max:50',
+            'first_name' => 'nullable|string|min:2|max:100',
             'email' => $emailRule,
             'phone' => 'nullable|string|size:10',
             'cin' => $cinRule,
@@ -91,7 +91,7 @@ class Student extends Model
             'profile_picture.file' => 'La photo de profil doit être un fichier.',
             'profile_picture.image' => 'La photo de profil doit être une image.',
             'profile_picture.mimes' => 'La photo de profil doit être au format JPEG, PNG ou JPG.',
-            'profile_picture.max' => 'La photo de profil ne doit pas dépasser 2 Mo.',
+            'profile_picture.max' => 'La photo de profil ne doit pas dépasser 10 Mo.',
             'residence_certificate.required' => 'Le certificat de résidence est obligatoire.',
             'payment_receipt.required' => 'Le reçu de paiement est obligatoire.',
             'status.in' => 'Le statut doit être parmi :pending, :validated ou :rejected.',
@@ -100,7 +100,7 @@ class Student extends Model
         return $validator;
     }
 
-    // Relations et mutators 
+    // Relations et mutators
     public function training()
     {
         return $this->belongsTo(Training::class);

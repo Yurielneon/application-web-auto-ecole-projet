@@ -17,10 +17,12 @@ return new class extends Migration
             $table->text('description');
             $table->date('start_date');
             $table->unsignedInteger('duration_weeks');
-            $table->decimal('price', 10, 2); 
+            $table->decimal('price', 10, 2);
             $table->foreignId('category_id')->constrained('categories')->onDelete('cascade');
             $table->json('schedule')->nullable();
-            $table->date('registration_end_date')->nullable()->after('start_date'); 
+            $table->date('registration_end_date')->nullable()->after('start_date');
+            $table->string('covering',255);
+            $table->boolean('is_finished')->default(false);
             $table->timestamps();
         });
 

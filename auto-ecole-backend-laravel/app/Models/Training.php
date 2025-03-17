@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Mail\TrainingResultsNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
 class Training extends Model
@@ -30,7 +32,9 @@ class Training extends Model
         'price',
         'category_id',
         'schedule',
-        'registration_end_date'
+        'registration_end_date',
+        'covering',
+        'is_finished'
     ];
 
     /**
@@ -50,6 +54,7 @@ class Training extends Model
         'category_id' => 'required|exists:categories,id',
         'schedule' => 'nullable',
         'registration_end_date' => 'required|date|after_or_equal:today',
+        'covering'=>'sometimes|file|image|mimes:jpeg,png,jpg|max:2048'
     ];
 
     public static $messages = [
@@ -71,10 +76,14 @@ class Training extends Model
         'price.numeric' => 'Le prix doit être un nombre.',
         'price.min' => 'Le prix ne peut pas être inférieur à 0.',
         'category_id.required' => 'La catégorie de la formation est requise.',
-        'category_id.exists' => 'La catégorie sélectionnée est invalide.',        
+        'category_id.exists' => 'La catégorie sélectionnée est invalide.',
         'registration_end_date.required' => 'La date de fin d\'inscription est requise.',
         'registration_end_date.date' => 'La date de fin d\'inscription doit être une date valide.',
         'registration_end_date.after_or_equal' => 'La date de fin d\'inscription doit être égale ou postérieure à aujoudh\'ui ',
+        'covering.file' => 'La photo de couverture doit être un fichier.',
+         'covering.image' => 'La photo de couverture doit être une image.',
+         'covering.mimes' => 'La photo de couverture doit être au format JPEG, PNG ou JPG.',
+         'covering.max' => 'La photo de couverture ne doit pas dépasser 10 Mo.',
     ];
 
     public static function validate($data)
@@ -120,5 +129,126 @@ class Training extends Model
     public function courses()
     {
         return $this->belongsToMany(Course::class, 'training_courses');
+    }
+
+
+    /**
+     * Vérifie si tous les examens ont des résultats, termine la formation et notifie les étudiants
+     *
+     * @return bool
+     */
+    public function checkAndFinishTraining()
+    {
+        // Charger tous les examens avec leurs résultats
+        $exams = $this->exams()->with('results')->get();
+
+        // Vérifier si chaque examen a au moins un résultat
+        foreach ($exams as $exam) {
+            if ($exam->results->isEmpty()) {
+                return false; // Un examen n'a pas de résultats, on ne finit pas
+            }
+        }
+
+        // Si tous les examens ont des résultats, marquer comme terminé
+        $this->is_finished = true;
+        $this->save();
+
+        // Calculer les résultats et envoyer des emails
+        $this->notifyStudentsOfResults();
+
+        return true;
+    }
+
+    /**
+     * Calcule les résultats finaux et envoie des notifications aux étudiants
+     *
+     * @return array
+     */
+    protected function notifyStudentsOfResults()
+    {
+        // Récupérer les étudiants validés
+        $students = $this->students()
+            ->where('status', 'validated')
+            ->with([
+                'results' => function ($query) {
+                    $query->whereIn('exam_id', $this->exams->pluck('id'));
+                }
+            ])
+            ->get();
+
+        $results = [];
+
+        // Récupérer les deux derniers examens (par date)
+        $lastTwoExams = $this->exams()->orderBy('date', 'desc')->take(2)->pluck('id');
+
+        foreach ($students as $student) {
+            $studentResults = $student->results;
+
+            // Vérifier les résultats des deux derniers examens
+            $lastTwoResults = $studentResults->whereIn('exam_id', $lastTwoExams)->pluck('passed');
+            $isSuccessful = $lastTwoResults->count() === 2 && $lastTwoResults->every(fn($passed) => $passed);
+
+            $results[$student->id] = [
+                'student' => [
+                    'id' => $student->id,
+                    'first_name' => $student->first_name,
+                    'last_name' => $student->last_name,
+                    'email' => $student->email,
+                ],
+                'results' => $studentResults->map(fn($result) => [
+                    'exam_id' => $result->exam_id,
+                    'score' => $result->score,
+                    'passed' => $result->passed,
+                ])->all(),
+                'final_result' => $isSuccessful ? 'Réussi' : 'Échoué',
+            ];
+
+            // Envoyer un email à l'étudiant
+            Mail::to($student->email)->send(new TrainingResultsNotification($student, $results[$student->id]));
+        }
+
+        return $results;
+    }
+
+    /**
+     * Récupère les résultats globaux de tous les étudiants pour toutes les formations terminées
+     *
+     * @return array
+     */
+    public static function getGlobalResultsForAllFinishedTrainings()
+    {
+        $trainings = self::where('is_finished', true)
+            ->with(['students.results', 'exams'])
+            ->get();
+
+        $results = [];
+
+        foreach ($trainings as $training) {
+            $lastTwoExams = $training->exams()->orderBy('date', 'desc')->take(2)->pluck('id');
+
+            foreach ($training->students as $student) {
+                $studentResults = $student->results->whereIn('exam_id', $training->exams->pluck('id'));
+                $lastTwoResults = $studentResults->whereIn('exam_id', $lastTwoExams)->pluck('passed');
+                $isSuccessful = $lastTwoResults->count() === 2 && $lastTwoResults->every(fn($passed) => $passed);
+
+                $results[] = [
+                    'training_id' => $training->id,
+                    'training_title' => $training->title,
+                    'student_id' => $student->id,
+                    'first_name' => $student->first_name,
+                    'last_name' => $student->last_name,
+                    'email' => $student->email,
+                    'status' => $student->status,
+                    'results' => $studentResults->map(fn($result) => [
+                        'exam_id' => $result->exam_id,
+                        'score' => $result->score,
+                        'passed' => $result->passed,
+                    ])->all(),
+                    'final_result' => $isSuccessful ? 'Réussi' : 'Échoué',
+                ];
+            }
+        }
+
+        return $results;
     }
 }

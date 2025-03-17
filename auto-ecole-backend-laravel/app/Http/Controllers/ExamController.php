@@ -8,12 +8,25 @@ use Illuminate\Http\Request;
 class ExamController extends Controller
 {
     /**
-     * Liste des examens pour un administrateur.
+     * Liste de tous les examens (pour un administrateur).
      */
     public function index()
     {
         $exams = Exam::with('training')->get();
-        return response()->json($exams);
+        return response()->json(['exams' => $exams], 200);
+    }
+
+    /**
+     * Récupérer les examens d'une formation spécifique.
+     */
+    public function getTrainingExams($trainingId)
+    {
+        try {
+            $exams = Exam::where('training_id', $trainingId)->get();
+            return response()->json(['exams' => $exams], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Erreur lors de la récupération des examens : ' . $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -21,19 +34,17 @@ class ExamController extends Controller
      */
     public function store(Request $request)
     {
-        // Validation des données
         $validator = Exam::validate($request->all());
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Création de l'examen
         $exam = Exam::create($request->all());
 
         return response()->json([
             'message' => 'Examen créé avec succès.',
-            'data' => $exam
+            'exam' => $exam
         ], 201);
     }
 
@@ -48,7 +59,7 @@ class ExamController extends Controller
             return response()->json(['message' => 'Examen non trouvé.'], 404);
         }
 
-        return response()->json($exam);
+        return response()->json(['exam' => $exam], 200);
     }
 
     /**
@@ -62,20 +73,18 @@ class ExamController extends Controller
             return response()->json(['message' => 'Examen non trouvé.'], 404);
         }
 
-        // Validation des données
         $validator = Exam::validate($request->all());
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Mise à jour de l'examen
         $exam->update($request->all());
 
         return response()->json([
             'message' => 'Examen mis à jour avec succès.',
-            'data' => $exam
-        ]);
+            'exam' => $exam
+        ], 200);
     }
 
     /**
@@ -91,6 +100,6 @@ class ExamController extends Controller
 
         $exam->delete();
 
-        return response()->json(['message' => 'Examen supprimé avec succès.']);
+        return response()->json(['message' => 'Examen supprimé avec succès.'], 200);
     }
 }

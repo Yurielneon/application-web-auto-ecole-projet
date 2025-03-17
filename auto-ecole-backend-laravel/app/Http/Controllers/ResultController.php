@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Exam;
 use App\Models\Result;
 use Illuminate\Http\Request;
 
@@ -10,33 +11,30 @@ class ResultController extends Controller
     /**
      * Liste des résultats d'examen pour un administrateur.
      */
-    public function index()
+    public function index($examId)
     {
-        $results = Result::with('exam', 'student')->get();
-        return response()->json($results);
+        $exam = Exam::findOrFail($examId);
+        $results = $exam->results()->with('student')->get();
+        return response()->json(['results' => $results], 200);
     }
 
-    /**
-     * Créer un nouveau résultat d'examen.
-     */
-    public function store(Request $request)
+    public function store(Request $request, $examId)
     {
-        // Validation des données
-        $validator = Result::validate($request->all());
+        $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'score' => 'required|numeric|min:0|max:20',
+        ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
+        $threshold = 10; // Seuil de réussite (configurable si besoin)
+        $passed = $request->score >= $threshold;
 
-        // Création du résultat
-        $result = Result::create($request->all());
+        $result = Result::updateOrCreate(
+            ['exam_id' => $examId, 'student_id' => $request->student_id],
+            ['score' => $request->score, 'passed' => $passed]
+        );
 
-        return response()->json([
-            'message' => 'Résultat créé avec succès.',
-            'data' => $result
-        ], 201);
+        return response()->json(['result' => $result, 'message' => 'Note enregistrée'], 200);
     }
-
     /**
      * Afficher les détails d'un résultat spécifique.
      */

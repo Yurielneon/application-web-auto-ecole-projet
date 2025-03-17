@@ -19,6 +19,19 @@ class CourseController extends Controller
     }
 
     /**
+     * Récupérer tous les cours spécifiques.
+     */
+    public function getSpecificCourses()
+    {
+        try {
+            $specificCourses = Course::where('type', 'specific')->get(['id', 'name', 'type', 'file_path']);
+            return response()->json(['courses' => $specificCourses], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Erreur lors de la récupération des cours spécifiques : ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Affiche un cours spécifique.
      */
     public function show($id)

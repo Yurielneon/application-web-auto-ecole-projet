@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
+
 class StudentController extends Controller
 {
     public function store(Request $request)
@@ -23,7 +24,7 @@ class StudentController extends Controller
         $validator = Student::validate($data, false); // Ajout
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return Response()->json(['errors' => $validator->errors()], 422);
         }
 
         // Validation des prérequis de catégorie
@@ -94,6 +95,11 @@ class StudentController extends Controller
     {
         $student = Student::findOrFail($id);
         $data = $request->all();
+        Log::info("Données reçues dans update :", [
+            'method' => $request->method(), // Devrait être POST
+            'input' => $request->all(),     // Données du formulaire
+            'files' => $request->files->all() // Fichiers envoyés
+        ]);
         $data['id'] = $id;
 
         $validator = Student::validate($data, true);
@@ -241,14 +247,14 @@ class StudentController extends Controller
     public function getStudentsInFormation(Request $request, $id){
         try {
           $students = Student::where('training_id', $id)
+          ->where('status', 'validated')
           ->get();
             return response()->json($students, 200);
         } catch (\Exception $e) {
-         return response()->json(['error' => 'Erreur lors de la récupération des étudiants de la formation : ' . $e->getMessage()], 500)
+         return response()->json(['error' => 'Erreur lors de la récupération des étudiants de la formation : ' . $e->getMessage()], 500);
         }
 
     }
-
 
 
 

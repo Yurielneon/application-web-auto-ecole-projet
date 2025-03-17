@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Training;
 use Illuminate\Http\Request;
+use App\Services\ImageUploadService;
 
 class TrainingController extends Controller
 {
@@ -12,8 +13,10 @@ class TrainingController extends Controller
      */
     public function index()
     {
-        $trainings = Training::paginate(10);
-        return response()->json($trainings, 200);
+        $trainings = Training::with('category')
+            ->get();
+        return response()->json(['trainings' => $trainings], 200);
+
     }
 
     /**
@@ -26,6 +29,16 @@ class TrainingController extends Controller
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+    // traitement d'image
+
+        try{
+            if($request->hasFile('covering')){
+                $data['covering'] = ImageUploadService::uploadImage($request->file('covering'), 'trainings', 'training');
+            }
+        }catch(\Exception $e){
+             return response()->json(['errors' => ['upload' => $e->getMessage()]], 422);
         }
 
         $training = Training::create($data);
@@ -62,6 +75,19 @@ class TrainingController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+    // traitement d'image
+
+            try{
+                if($request->hasFile('covering')){
+                ImageUploadService::deleteImage($training->covering);
+                    $data['covering'] = ImageUploadService::uploadImage($request->file('covering'), 'trainings', 'training');
+                }else{
+                    $data['covering'] = $training->covering;
+                }
+            }catch(\Exception $e){
+                 return response()->json(['errors' => ['upload' => $e->getMessage()]], 422);
+            }
+
         $training->update($data);
         $training->load('category'); // Charger la relation category
 
@@ -73,8 +99,12 @@ class TrainingController extends Controller
      */
     public function show($id)
     {
-        $training = Training::findOrFail($id);
-        return response()->json($training, 200);
+        try {
+            $training = Training::with('category')->findOrFail($id);
+            return response()->json(['training' => $training], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Formation non trouvée : ' . $e->getMessage()], 404);
+        }
     }
 
 
@@ -86,6 +116,7 @@ class TrainingController extends Controller
     {
         $training = Training::findOrFail($id);
 
+        ImageUploadService::deleteImage($training->covering);
         // Suppression de la formation
         $training->delete();
 
@@ -109,21 +140,72 @@ class TrainingController extends Controller
             ->get();
         return response()->json(['trainings' => $trainings], 200);
     }
-
-    /** obtenir tous les cours relatif a la formation
+    /**
+     * Récupérer les cours d'une formation.
      */
-    public function getTrainingCourses($id)
+    public function getCourses($id)
     {
-        $training = Training::with('courses')->findOrFail($id);
-        return response()->json(
-            $training->courses->map(function ($course) {
+        try {
+            $training = Training::with('courses')->findOrFail($id);
+            $courses = $training->courses->map(function ($course) {
                 return [
                     'id' => $course->id,
                     'name' => $course->name,
                     'type' => $course->type,
                     'file_path' => $course->file_path,
                 ];
-            })
-        );
+            });
+            return response()->json(['courses' => $courses], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Erreur lors de la récupération des cours : ' . $e->getMessage()], 404);
+        }
+    }
+
+    /**
+     * Récupérer les étudiants d'une formation.
+     */
+    public function getStudents($id)
+    {
+        try {
+            $training = Training::findOrFail($id);
+            $students = $training->students()
+            ->where('status', 'validated')
+            ->get();
+            return response()->json(['students' => $students], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Erreur lors de la récupération des étudiants : ' . $e->getMessage()], 404);
+        }
+    }
+
+
+    /**
+     * Vérifie et termine une formation si tous les examens ont des résultats, puis notifie les étudiants
+     */
+    public function finishTraining(Request $request, $trainingId)
+    {
+        $training = Training::findOrFail($trainingId);
+
+        if ($training->checkAndFinishTraining()) {
+            return response()->json([
+                'message' => "La formation #{$training->id} est marquée comme terminée et les étudiants ont été notifiés."
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => "La formation ne peut pas être terminée : certains examens n'ont pas de résultats."
+        ], 400);
+    }
+
+    /**
+     * Récupère les résultats globaux de tous les étudiants pour toutes les formations terminées
+     */
+    public function getAllGlobalFinishedTrainingResults(Request $request)
+    {
+        $results = Training::getGlobalResultsForAllFinishedTrainings();
+
+        return response()->json([
+            'message' => "Résultats globaux des étudiants pour toutes les formations terminées.",
+            'results' => $results,
+        ], 200);
     }
 }
